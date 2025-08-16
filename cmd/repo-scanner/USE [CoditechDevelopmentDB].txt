@@ -1,0 +1,76 @@
+USE [CoditechDevelopmentDB]
+GO
+/****** Object:  StoredProcedure [dbo].[Coditech_GetOrganisationCentrewiseJoiningCodeList]    Script Date: 24-07-2025 12:44:57 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ CREATE OR ALTER     PROCEDURE [dbo].[cUSTOM_Coditech_GetOrganisationCentrewiseJoiningCodeList]
+( 
+   @CentreCode nvarchar(15),
+   @WhereClause  VARCHAR(MAX),
+    @Rows         INT          = 100,
+    @PageNo       INT          = 1,
+    @Order_BY     VARCHAR(100) = '',
+	@RowsCount    INT OUT
+    )
+	--exec cUSTOM_Coditech_GetOrganisationCentrewiseJoiningCodeList  @CentreCode='CTA', @WhereClause=null,@Rows=25,@PageNo=1,@Order_BY='',@RowsCount= null
+AS
+   
+     BEGIN
+         SET NOCOUNT ON;
+		 
+         BEGIN TRY
+             DECLARE @SQL NVARCHAR(MAX);
+			 DECLARE @ExpireJoiningCode INT;
+		 	 DECLARE @ActiveJoiningCode INT;
+			 DECLARE @TotalJoiningCode  INT;
+             DECLARE @TBL_OrganisationCentrewiseJoiningCodeDetail TABLE
+			 (
+				 OrganisationCentrewiseJoiningCodeId			bigint,
+				 JoiningCode							   VARCHAR(60),
+				 Quantity										   INT,
+				 ExpireJoiningCode								   INT,
+				 ActiveJoiningCode								   INT,
+				 TotalJoiningCode								   INT,
+				 IsExpired										   BIT,
+				 RowId											   INT,
+				 CountNo										   INT
+			 )
+SELECT @ExpireJoiningCode = COUNT(*) FROM OrganisationCentrewiseJoiningCode WHERE CentreCode = @CentreCode AND IsExpired = 1;
+SELECT @ActiveJoiningCode = COUNT(*) FROM OrganisationCentrewiseJoiningCode WHERE CentreCode = @CentreCode AND IsExpired = 0;
+SET @TotalJoiningCode = @ExpireJoiningCode + @ActiveJoiningCode;
+
+             SET @SQL = '
+						;with Cte_filterOrganisationCentrewiseJoiningCode AS 
+						(
+							SELECT OrganisationCentrewiseJoiningCodeId,JoiningCode,Quantity,IsExpired,
+							  ' + CAST(@ExpireJoiningCode AS VARCHAR) + ' AS ExpireJoiningCode,' + CAST(@ActiveJoiningCode AS VARCHAR) + ' AS ActiveJoiningCode, ' + CAST(@TotalJoiningCode AS VARCHAR) + ' AS TotalJoiningCode,' + dbo.Fn_GetPagingRowId(@Order_By, 'JoiningCode') + ', COUNT(*) OVER() AS CountNo
+						FROM OrganisationCentrewiseJoiningCode where CentreCode='''+@CentreCode+''' '+[dbo].[Fn_GetFilterWhereClause](@WhereClause)+'
+						)
+						SELECT   OrganisationCentrewiseJoiningCodeId,JoiningCode,Quantity,ExpireJoiningCode,ActiveJoiningCode,TotalJoiningCode,IsExpired,RowId,CountNo
+						FROM Cte_filterOrganisationCentrewiseJoiningCode
+						'+dbo.Fn_GetPaginationWhereClause(@PageNo,@rows)
+						print @SQL
+			 INSERT INTO @TBL_OrganisationCentrewiseJoiningCodeDetail (OrganisationCentrewiseJoiningCodeId,JoiningCode,Quantity,ExpireJoiningCode, ActiveJoiningCode,TotalJoiningCode,IsExpired,RowId,CountNo )
+			 EXEC(@SQL)
+			 SET @RowsCount =ISNULL((SELECT TOP 1 CountNo  FROM @TBL_OrganisationCentrewiseJoiningCodeDetail),0)
+			 SELECT OrganisationCentrewiseJoiningCodeId,JoiningCode,Quantity,ExpireJoiningCode,ActiveJoiningCode,TotalJoiningCode,IsExpired
+			 FROM @TBL_OrganisationCentrewiseJoiningCodeDetail
+         END TRY
+         BEGIN CATCH
+          DECLARE @Status BIT ;
+		  SET @Status = 0;
+		  DECLARE @Error_procedure VARCHAR(1000)= ERROR_PROCEDURE(), @ErrorMessage NVARCHAR(MAX)= ERROR_MESSAGE(), @ErrorLine VARCHAR(100)= ERROR_LINE(), @ErrorCall NVARCHAR(MAX)= 'EXEC Coditech_GetOrganisationCentrewiseJoiningCodeList @WhereClause = '+cast (@WhereClause AS VARCHAR(50))+',@Rows='+CAST(@Rows AS VARCHAR(50))+',@PageNo='+CAST(@PageNo AS VARCHAR(50))+',@Order_BY='+@Order_BY+',@RowsCount='+CAST(@RowsCount AS VARCHAR(50))+',@Status='+CAST(@Status AS VARCHAR(10));
+              			 
+          SELECT 0 AS ID,CAST(0 AS BIT) AS Status;                    
+		  
+
+          --EXEC Znode_InsertProcedureErrorLog
+          --  @ProcedureName = 'Coditech_GetOrganisationCentrewiseJoiningCodeList',
+          --  @ErrorInProcedure = @Error_procedure,
+          --  @ErrorMessage = @ErrorMessage,
+          --  @ErrorLine = @ErrorLine,
+          --  @ErrorCall = @ErrorCall;
+         END CATCH;
+     END;
