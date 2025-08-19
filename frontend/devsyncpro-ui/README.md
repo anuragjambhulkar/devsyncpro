@@ -44,3 +44,21 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+# DevSyncPro Dashboard
+
+A real-time microservice dependency dashboard with live deploy event feed, D3 visualization, and simulated CI/CD actions.
+
+## Features
+- End-to-end Go backend, WebSocket, and React UI
+- Real-time deploy action with instant feedback
+- Node color/size = blast radius, with tooltips/legend
+- Modern dark-mode, deployable & cloud-ready
+
+## Usage
+- Start Go backend: `go run ./cmd/repo-scanner/main.go`
+- Start Node websocket relay: `node server.js`
+- Start React app: `npm start`
+- Trigger deployments, see live updates!
+
+![screenshot.png](screenshot.png)

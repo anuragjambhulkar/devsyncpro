@@ -31,6 +31,7 @@ func reposHandler(w http.ResponseWriter, r *http.Request) {
 		{"auth-service", []string{"db-lib"}, "a1b2c3", 6},
 		{"user-service", []string{"auth-service"}, "d4e5f6", 3},
 		{"web-app", []string{"user-service", "auth-service"}, "g7h8i9", 8},
+		{"db-lib", []string{}, "zzz999", 1},
 	}
 	json.NewEncoder(w).Encode(data)
 }

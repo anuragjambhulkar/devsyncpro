@@ -1,13 +1,15 @@
 import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
 
-// Props: dependency graph object and blast radius info
 type DependencyGraphProps = {
   graph: Record<string, string[]>;
   blastRadiusMap: Record<string, number>;
 };
 
-export const DependencyGraph: React.FC<DependencyGraphProps> = ({ graph, blastRadiusMap }) => {
+export const DependencyGraph: React.FC<DependencyGraphProps> = ({
+  graph,
+  blastRadiusMap,
+}) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   useEffect(() => {
@@ -21,12 +23,28 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ graph, blastRa
 
     const width = 500;
     const height = 400;
-
-    // For node radius and color scaling
     const minR = 20;
     const maxR = 40;
     const allBlasts = Object.values(blastRadiusMap);
     const maxBlast = allBlasts.length ? Math.max(...allBlasts, 1) : 1;
+
+    // Remove previous tooltip
+    d3.select(".graph-tooltip").remove();
+
+    // Create tooltip (once per render)
+    const tooltip = d3
+      .select("body")
+      .append("div")
+      .attr("class", "graph-tooltip")
+      .style("position", "absolute")
+      .style("z-index", "10")
+      .style("background", "#222")
+      .style("color", "#fff")
+      .style("padding", "5px 10px")
+      .style("border-radius", "5px")
+      .style("pointer-events", "none")
+      .style("font-size", "13px")
+      .style("display", "none");
 
     // Clear svg before new drawing
     d3.select(svgRef.current).selectAll("*").remove();
@@ -38,10 +56,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ graph, blastRa
 
     const simulation = d3
       .forceSimulation(nodes as any)
-      .force(
-        "link",
-        d3.forceLink(links).id((d: any) => d.id).distance(120)
-      )
+      .force("link", d3.forceLink(links).id((d: any) => d.id).distance(120))
       .force("charge", d3.forceManyBody().strength(-400))
       .force("center", d3.forceCenter(width / 2, height / 2));
 
@@ -62,13 +77,30 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ graph, blastRa
       .append("circle")
       .attr("r", (d: any) => {
         const br = blastRadiusMap[d.id] ?? 1;
-        // rescale: high blast -> larger node
         return minR + (maxR - minR) * (br / maxBlast);
       })
       .attr("fill", (d: any) => {
         const br = blastRadiusMap[d.id] ?? 1;
-        // color: small = green, big = red
         return d3.interpolateRdYlGn(1 - br / maxBlast);
+      });
+
+    node
+      .on("mouseover", function (event: any, d: any) {
+        tooltip
+          .html(
+            `<b>${d.id}</b><br/>Blast Radius: <b>${blastRadiusMap[d.id] ?? "-"}</b>`
+          )
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY - 28}px`)
+          .style("display", "block");
+      })
+      .on("mousemove", function (event: any) {
+        tooltip
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY - 28}px`);
+      })
+      .on("mouseout", function () {
+        tooltip.style("display", "none");
       });
 
     (node as any).call(drag(simulation));
@@ -92,33 +124,34 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({ graph, blastRa
         .attr("x2", (d: any) => d.target.x)
         .attr("y2", (d: any) => d.target.y);
 
-      node
-        .attr("cx", (d: any) => d.x)
-        .attr("cy", (d: any) => d.y);
+      node.attr("cx", (d: any) => d.x).attr("cy", (d: any) => d.y);
 
-      label
-        .attr("x", (d: any) => d.x)
-        .attr("y", (d: any) => d.y);
+      label.attr("x", (d: any) => d.x).attr("y", (d: any) => d.y);
     });
 
     function drag(sim: any) {
       return d3
         .drag()
-        .on("start", function(event: any, d: any) {
+        .on("start", function (event: any, d: any) {
           if (!event.active) sim.alphaTarget(0.3).restart();
           d.fx = d.x;
           d.fy = d.y;
         })
-        .on("drag", function(event: any, d: any) {
+        .on("drag", function (event: any, d: any) {
           d.fx = event.x;
           d.fy = event.y;
         })
-        .on("end", function(event: any, d: any) {
+        .on("end", function (event: any, d: any) {
           if (!event.active) sim.alphaTarget(0);
           d.fx = null;
           d.fy = null;
         });
     }
+
+    // Clean up tooltip on unmount
+    return () => {
+      tooltip.remove();
+    };
   }, [graph, blastRadiusMap]);
 
   return (
