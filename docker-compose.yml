@@ -1,39 +1,38 @@
+version: '3.8'
+
 services:
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
     ports:
-      - "8080:8080"
+      - "8081:8081"
+    # Only map testdata if needed
+    volumes:
+      - ./backend/testdata:/root/testdata
 
   websocket:
-    build: ./websocket-server
+    build:
+      context: ./websocket-server
+      dockerfile: Dockerfile
     ports:
-      - "8081:8081"
       - "9000:9000"
     depends_on:
       - backend
 
   frontend:
-    environment:
-      - CHOKIDAR_USEPOLLING=true
     build:
       context: ./frontend/devsyncpro-ui
       dockerfile: Dockerfile
+    environment:
+      - CHOKIDAR_USEPOLLING=true
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend/devsyncpro-ui:/app
-      - /app/node_modules
-    develop:
-      watch:
-        - action: sync
-          path: ./frontend/devsyncpro-ui
-          target: /app
-          ignore:
-            - node_modules/
-        - action: rebuild
-          path: ./frontend/devsyncpro-ui/package.json
     depends_on:
       - backend
       - websocket
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/devsyncpro-ui/src
+          target: /app/src

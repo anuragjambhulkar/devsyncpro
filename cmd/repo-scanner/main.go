@@ -2,87 +2,88 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
-	"time"
+	"os"
+	"path/filepath"
+
+	"golang.org/x/mod/modfile"
 )
 
-type Repo struct {
-	Name         string   `json:"name"`
-	Dependencies []string `json:"dependencies"`
-	LastCommit   string   `json:"last_commit"`
-	BlastRadius  int      `json:"blast_radius"`
+type Edge struct {
+	From string `json:"from"`
+	To   string `json:"to"`
 }
 
-// CORS headers for every response
-func setCorsHeaders(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+type DepGraph struct {
+	Nodes []string `json:"nodes"`
+	Edges []Edge   `json:"edges"`
 }
 
-func reposHandler(w http.ResponseWriter, r *http.Request) {
-	setCorsHeaders(w)
-	if r.Method == "OPTIONS" {
-		return
+func parseGoMod(path string) ([]string, error) {
+	gomod := filepath.Join(path, "go.mod")
+	data, err := os.ReadFile(gomod)
+	if err != nil {
+		return nil, err
 	}
-
-	data := []Repo{
-		{"auth-service", []string{"db-lib"}, "a1b2c3", 6},
-		{"user-service", []string{"auth-service"}, "d4e5f6", 3},
-		{"web-app", []string{"user-service", "auth-service"}, "g7h8i9", 8},
-		{"db-lib", []string{}, "zzz999", 1},
+	mf, err := modfile.Parse("go.mod", data, nil)
+	if err != nil {
+		return nil, err
 	}
-	json.NewEncoder(w).Encode(data)
+	deps := []string{}
+	for _, req := range mf.Require {
+		deps = append(deps, req.Mod.Path)
+	}
+	return deps, nil
 }
 
-func dependenciesHandler(w http.ResponseWriter, r *http.Request) {
-	setCorsHeaders(w)
-	if r.Method == "OPTIONS" {
-		return
-	}
+var lastGraph DepGraph
 
-	depGraph := map[string][]string{
-		"web-app":      {"user-service", "auth-service"},
-		"user-service": {"auth-service"},
-		"auth-service": {"db-lib"},
-		"db-lib":       {},
+func withCORS(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		h(w, r)
 	}
-	json.NewEncoder(w).Encode(depGraph)
-}
-
-func deployHandler(w http.ResponseWriter, r *http.Request) {
-	setCorsHeaders(w)
-	if r.Method == "OPTIONS" {
-		return
-	}
-	if r.Method != "POST" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
-	var req struct {
-		Repo string `json:"repo"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	// Normally you'd do a real deploy—here just log and reply!
-	log.Printf("Triggered deploy for: %s\n", req.Repo)
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
-		"status":    "deploy started",
-		"repo":      req.Repo,
-		"timestamp": time.Now().Format(time.RFC3339),
-	})
 }
 
 func main() {
-	http.HandleFunc("/repos", reposHandler)
-	http.HandleFunc("/dependencies", dependenciesHandler)
-	http.HandleFunc("/deploy", deployHandler)
-	log.Println("Backend running on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	http.HandleFunc("/scan", withCORS(scanHandler))
+	http.HandleFunc("/graph", withCORS(graphHandler))
+	log.Println("Repo Scanner API running on :8081")
+	http.ListenAndServe(":8081", nil)
+}
+
+func scanHandler(w http.ResponseWriter, r *http.Request) {
+	type Req struct {
+		RepoPath string `json:"repoPath"`
+	}
+	var req Req
+	body, _ := io.ReadAll(r.Body)
+	_ = json.Unmarshal(body, &req)
+	deps, err := parseGoMod(req.RepoPath)
+	if err != nil {
+		http.Error(w, "Failed to scan: "+err.Error(), 400)
+		return
+	}
+	nodes := []string{"main"}
+	edges := []Edge{}
+	for _, d := range deps {
+		nodes = append(nodes, d)
+		edges = append(edges, Edge{From: "main", To: d})
+	}
+	lastGraph = DepGraph{Nodes: nodes, Edges: edges}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"scan complete"}`))
+}
+
+func graphHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(lastGraph)
 }
