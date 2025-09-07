@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { DependencyGraph } from "./DependencyGraph";
 
 interface Edge {
@@ -40,7 +39,7 @@ function computeTransitiveBlastRadius(graph: Record<string, string[]>) {
 const API_BASE = "http://localhost:8081";
 
 export const DependencyScannerPanel: React.FC = () => {
-  const [dependencyGraph, setDependencyGraph] = useState<DepGraph | null>(null);
+  const [dependencyGraph, setDependencyGraph] = useState<DepGraph>({nodes: [], edges: []});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [repoPath, setRepoPath] = useState("C:\\Users\\ADMIN\\Desktop\\Projects\\DEVSYNCPRO");
@@ -48,26 +47,35 @@ export const DependencyScannerPanel: React.FC = () => {
   useEffect(() => { fetchGraph(); }, []);
 
   async function fetchGraph() {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      const res = await axios.get<DepGraph>(`${API_BASE}/graph`);
-      setDependencyGraph(res.data);
+      const res = await fetch(`${API_BASE}/graph`);
+      const data = await res.json();
+      if (Array.isArray(data.nodes) && Array.isArray(data.edges)) {
+        setDependencyGraph(data);
+      } else {
+        setDependencyGraph({nodes: [], edges: []});
+      }
     } catch (err: any) {
       setError("Backend /graph not reachable: " + (err?.message || err));
-      setDependencyGraph(null);
+      setDependencyGraph({nodes: [], edges: []});
     }
     setLoading(false);
   }
 
   async function scanRepo() {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      await axios.post(`${API_BASE}/scan`, { repoPath });
+      await fetch(`${API_BASE}/scan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repoPath })
+      });
       await fetchGraph();
     } catch (err: any) {
       const msg =
-        err?.response?.data?.toString?.() ||
-        err?.response?.data ||
         err?.message ||
         "Unknown error";
       setError("Scan failed: " + msg);
@@ -75,17 +83,13 @@ export const DependencyScannerPanel: React.FC = () => {
     }
   }
 
-  const adj =
-    dependencyGraph && dependencyGraph.nodes.length > 0
-      ? asAdjacencyList(dependencyGraph.nodes, dependencyGraph.edges)
-      : {};
-
+  const adj = asAdjacencyList(dependencyGraph.nodes, dependencyGraph.edges);
   const blastRadiusMap = computeTransitiveBlastRadius(adj);
 
   return (
     <div>
-      {error && <div style={{ color: "#e55", padding: "1em" }}>{error}</div>}
       <h1>DevSyncPro Scanner</h1>
+      {error && <div style={{ color: "#e55", padding: "1em" }}>{error}</div>}
       <div style={{ marginBottom: "1em" }}>
         <input
           value={repoPath}
@@ -99,10 +103,12 @@ export const DependencyScannerPanel: React.FC = () => {
         </button>
       </div>
       <h2>Dependency Graph</h2>
-      {dependencyGraph && dependencyGraph.nodes.length > 0 ? (
-        <DependencyGraph graph={adj} blastRadiusMap={blastRadiusMap} />
+      {loading ? (
+        <div style={{ color: "#aaa" }}>Loading...</div>
       ) : (
-        <div style={{ color: "#fff" }}>No data yet.</div>
+        dependencyGraph.nodes.length > 0 ?
+          <DependencyGraph graph={adj} blastRadiusMap={blastRadiusMap} /> :
+          <div style={{ color: "#fff" }}>No data yet.</div>
       )}
     </div>
   );

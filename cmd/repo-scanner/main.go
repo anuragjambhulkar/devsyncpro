@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/smtp"
 	"os"
 	"path/filepath"
 	"sync"
@@ -92,12 +93,14 @@ func withCORS(h http.HandlerFunc) http.HandlerFunc {
 
 // --- Incident & WebSocket Types/APIs ---
 type Incident struct {
-	ID        int       `json:"id"`
-	Type      string    `json:"type"`
-	Service   string    `json:"service"`
-	Status    string    `json:"status"`
-	Message   string    `json:"message"`
-	Timestamp time.Time `json:"timestamp"`
+	ID         int       `json:"id"`
+	Type       string    `json:"type"`
+	Service    string    `json:"service"`
+	Status     string    `json:"status"`
+	Message    string    `json:"message"`
+	Timestamp  time.Time `json:"timestamp"`
+	Severity   string    `json:"severity,omitempty"`
+	WarRoomUrl string    `json:"warRoomUrl,omitempty"`
 }
 
 var (
@@ -110,7 +113,39 @@ var (
 	wsLock    sync.Mutex
 )
 
-// POST /incidents -- adds a new incident, pushes via websocket
+// --- SLACK WEBHOOK AND EMAIL CONFIG ---
+var slackWebhook = "https://hooks.slack.com/services/YOUR/WEBHOOK/PATH"
+var incidentEmailRecipients = []string{
+	"your@email.com",
+}
+var emailFrom = "your@email.com"
+var emailPassword = "your_app_password" // Use env var or config in production
+
+// --- Utility function to send Slack alert ---
+func sendSlackAlert(incident Incident) {
+	payload := map[string]string{
+		"text": "🚨 *New Incident: " + incident.Type + "*\n" +
+			"Service: " + incident.Service + "\n" +
+			"Status: " + incident.Status + "\n" +
+			"Message: " + incident.Message,
+	}
+	jsonBody, _ := json.Marshal(payload)
+	http.Post(slackWebhook, "application/json", bytes.NewBuffer(jsonBody))
+}
+
+// --- Utility to send HTML email (supports Gmail SMTP with app password) ---
+func sendIncidentEmail(to, subject, body string) error {
+	msg := "From: " + emailFrom + "\n" +
+		"To: " + to + "\n" +
+		"Subject: " + subject + "\n" +
+		"MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n" +
+		body
+	return smtp.SendMail("smtp.gmail.com:587",
+		smtp.PlainAuth("", emailFrom, emailPassword, "smtp.gmail.com"),
+		emailFrom, []string{to}, []byte(msg))
+}
+
+// --- POST /incidents -- adds a new incident, pushes via websocket & sends alerts ---
 func handlePostIncident(w http.ResponseWriter, r *http.Request) {
 	var inc Incident
 	if err := json.NewDecoder(r.Body).Decode(&inc); err != nil {
@@ -120,12 +155,36 @@ func handlePostIncident(w http.ResponseWriter, r *http.Request) {
 	incidentLock.Lock()
 	incidentCount++
 	inc.ID = incidentCount
-	inc.Status = "active"
+	if inc.Status == "" {
+		inc.Status = "active"
+	}
 	inc.Timestamp = time.Now()
+
+	// Auto-set war room link and severity if incident is critical
+	if inc.Severity == "critical" {
+		inc.WarRoomUrl = "https://zoom.us/j/yourmeetingid" // Replace with real war room link if desired
+	} else {
+		inc.WarRoomUrl = ""
+	}
+
 	incidentStore = append(incidentStore, inc)
 	incidentLock.Unlock()
 	go broadcastIncident(inc)
-	go notifySlack("🚨 INCIDENT: " + inc.Type + " in " + inc.Service + ": " + inc.Message)
+	go sendSlackAlert(inc)
+
+	// Send email to each recipient
+	go func(incident Incident) {
+		for _, to := range incidentEmailRecipients {
+			sendIncidentEmail(
+				to,
+				"New Incident: "+incident.Type,
+				"<b>Service:</b> "+incident.Service+"<br />"+
+					"<b>Status:</b> "+incident.Status+"<br />"+
+					"<b>Message:</b> "+incident.Message,
+			)
+		}
+	}(inc)
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(inc)
 }
@@ -167,7 +226,6 @@ func broadcastIncident(inc Incident) {
 }
 
 // --- Deployments ---
-
 type Deployment struct {
 	ID      int       `json:"id"`
 	Service string    `json:"service"`
@@ -236,7 +294,6 @@ func handleMetrics(w http.ResponseWriter, r *http.Request) {
 	}
 	deployLock.Unlock()
 	incidentLock.Lock()
-	// Simulate avg detection/metrics (improve as needed)
 	avgDetectTime := 20
 	blast := 7
 	incidentLock.Unlock()
@@ -255,18 +312,33 @@ func handleMetrics(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(metrics)
 }
 
-// --- Slack Webhook Integration ---
-// Uncomment below and insert your real Slack Webhook URL
-func notifySlack(msg string) {
-	webhookURL := "https://hooks.slack.com/services/XXX/YYY/ZZZ"
-	payload := []byte(`{"text": "` + msg + `"}`)
-	http.Post(webhookURL, "application/json", bytes.NewBuffer(payload))
+// --- Incident resolve & diagnose ---
+func handleResolveIncident(w http.ResponseWriter, r *http.Request) {
+	var d struct{ ID int }
+	json.NewDecoder(r.Body).Decode(&d)
+	incidentLock.Lock()
+	for i, inc := range incidentStore {
+		if inc.ID == d.ID {
+			incidentStore[i].Status = "resolved"
+		}
+	}
+	incidentLock.Unlock()
+	w.Write([]byte("{}"))
+}
+func handleDiagnoseIncident(w http.ResponseWriter, r *http.Request) {
+	var d struct{ ID int }
+	json.NewDecoder(r.Body).Decode(&d)
+	suggestion := "Check DB connection, dependency configuration, and service logs for details." // Mock AI suggestion
+	json.NewEncoder(w).Encode(map[string]string{"fix": suggestion})
 }
 
 // --- main(): register everything! ---
 func main() {
+
+	http.HandleFunc("/diagnose", withCORS(handleDiagnoseIncident))
 	http.HandleFunc("/scan", withCORS(scanHandler))
 	http.HandleFunc("/graph", withCORS(graphHandler))
+	http.HandleFunc("/resolve", withCORS(handleResolveIncident))
 	http.HandleFunc("/incidents", withCORS(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			handlePostIncident(w, r)

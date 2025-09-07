@@ -1,14 +1,15 @@
 import React, { useState } from "react";
 
 export const IncidentAddForm: React.FC<{ onAdd?: () => void }> = ({ onAdd }) => {
-  const [form, setForm] = useState<{ type: string; service: string; message: string }>({
+  const [form, setForm] = useState<{ type: string; service: string; message: string; severity: string }>({
     type: "",
     service: "",
-    message: ""
+    message: "",
+    severity: "major"
   });
   const [msg, setMsg] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -28,7 +29,7 @@ export const IncidentAddForm: React.FC<{ onAdd?: () => void }> = ({ onAdd }) => 
       .then(async r => {
         if (r.ok) {
           setMsg("Incident submitted!");
-          setForm({ type: "", service: "", message: "" });
+          setForm({ type: "", service: "", message: "", severity: "major" });
           if (onAdd) onAdd();
         } else {
           setMsg("Error: " + (await r.text()));
@@ -78,6 +79,18 @@ export const IncidentAddForm: React.FC<{ onAdd?: () => void }> = ({ onAdd }) => 
         autoComplete="off"
         style={{ marginBottom: 4, width: '100%' }}
       /><br />
+      <select
+        name="severity"
+        value={form.severity}
+        onChange={handleChange}
+        style={{ marginBottom: 8, width: '100%' }}
+        required
+      >
+        <option value="minor">Minor</option>
+        <option value="major">Major</option>
+        <option value="critical">Critical</option>
+      </select>
+      <br />
       <button type="submit">Submit</button>
       {msg && <span style={{ marginLeft: 12 }}>{msg}</span>}
     </form>
