@@ -13,6 +13,7 @@
 /bin/
 build/
 vendor/
+node_modules/
 
 # IDE/editor files
 .vscode/
