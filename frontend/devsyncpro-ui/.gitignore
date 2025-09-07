@@ -1,23 +1,66 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# --- Go Backend ---
+# Binaries, build output
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+/go.sum
+/go-build/
+/coverage.out
+/dist/
+/bin/
+build/
+vendor/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
 
-# testing
-/coverage
+# Logs and env
+*.log
+.env
+.env.*
 
-# production
-/build
-
-# misc
+# OS-specific
 .DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+Thumbs.db
 
+# --- Node/React Frontend ---
+node_modules/
+build/
+dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+coverage/
+.env
+.env.*
+
+# React/CRA specific
+*.local
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# Test outputs
+jest-*.json
+/coverage/
+
+# Misc
+*.tgz
+*.bak
+*.old
+
+# --- General ---
+# Ignore by default all hidden files except .env, .gitignore etc.
+!.env
+!.gitignore
+!.dockerignore
+
+# Package lockfiles (optional, if using Yarn or NPM only in one dir)
+#package-lock.json
+#yarn.lock

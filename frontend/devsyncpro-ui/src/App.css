@@ -1,60 +1,66 @@
-.App {
-  text-align: center;
+body {
+  background: #181a20 !important;
+  color: #212121 !important;
+  font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* General elements */
+input, button, select, textarea {
+  background: #23242b;
+  color: #eee;
+  border: 1px solid #444;
+  border-radius: 5px;
+  padding: 0.4em 0.7em;
+  font-size: 1em;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-body, #root {
-  background: #18191a;
-  color: #ebebeb;
-  font-family: 'Segoe UI', Arial, sans-serif;
+input:focus, button:focus, select:focus, textarea:focus {
+  outline: 2px solid #845ef7;
+  background: #23242b;
 }
 
+/* Table styling */
 table {
-  border-collapse: collapse;
-  margin-bottom: 2em;
+  background: #222;
+  color: #fafafa;
+  border-radius: 7px;
 }
 
-th, td { border: 1px solid #3a3a3a; }
-button {
-  background: #3535dd;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  padding: 5px 14px;
-  cursor: pointer;
-}
-button:hover { background: #2c2cbc; }
-
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+th, td {
+  border-bottom: 1px solid #393939;
 }
 
-.App-link {
-  color: #61dafb;
+th {
+  background: #23242b;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+svg {
+  background: #23242b !important;
+  border-radius: 10px;
+}
+
+h1, h2, h3, h4 {
+  color: #f3dc85;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 12px;
+  background: #23242b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #845ef7;
+}
+
+/* Tooltips */
+.graph-tooltip {
+  background: #181a20 !important;
+  color: #efe790 !important;
+  border: 1px solid #845ef7 !important;
 }
