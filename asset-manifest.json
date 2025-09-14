@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/devsyncpro/static/css/main.e6c13ad2.css",
+    "main.js": "/devsyncpro/static/js/main.66987f8e.js",
+    "static/js/453.03e16e71.chunk.js": "/devsyncpro/static/js/453.03e16e71.chunk.js",
+    "index.html": "/devsyncpro/index.html",
+    "main.e6c13ad2.css.map": "/devsyncpro/static/css/main.e6c13ad2.css.map",
+    "main.66987f8e.js.map": "/devsyncpro/static/js/main.66987f8e.js.map",
+    "453.03e16e71.chunk.js.map": "/devsyncpro/static/js/453.03e16e71.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.66987f8e.js"
+  ]
+}
