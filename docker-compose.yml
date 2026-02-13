@@ -1,38 +1,73 @@
 version: '3.8'
 
 services:
-  backend:
+  repo-scanner:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: backend/repo-scanner/Dockerfile
     ports:
       - "8081:8081"
-    # Only map testdata if needed
-    volumes:
-      - ./backend/testdata:/root/testdata
+    environment:
+      - PORT=8081
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - PUBSUB_TOPIC_SCAN=scan-events
+      # DB Config (Enabled for Cloud, Disabled for Local Offline)
+      # - DB_HOST=postgres
+      # - DB_USER=devsync
+      # - DB_PASS=devsync_secret
+      # - DB_NAME=devsyncpro
+      # depends_on:
+      #   - postgres
 
-  websocket:
+  orchestrator:
+    build:
+      context: .
+      dockerfile: backend/orchestrator/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      - PORT=8082
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - PUBSUB_TOPIC_OPERATIONS=operation-events
+      - BQ_DATASET=devsyncpro_analytics
+      - BQ_TABLE_METRICS=system_metrics
+    depends_on:
+      - relay
+
+  ai-analyzer:
+    build:
+      context: .
+      dockerfile: backend/ai-analyzer/Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - GOOGLE_CLOUD_LOCATION=us-central1
+
+  contract-service:
+    build:
+      context: .
+      dockerfile: backend/contract-service/Dockerfile
+    ports:
+      - "8084:8084"
+    environment:
+      - PORT=8084
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+
+  relay:
     build:
       context: ./websocket-server
       dockerfile: Dockerfile
     ports:
       - "9000:9000"
-    depends_on:
-      - backend
 
   frontend:
     build:
       context: ./frontend/devsyncpro-ui
       dockerfile: Dockerfile
-    environment:
-      - CHOKIDAR_USEPOLLING=true
     ports:
       - "3000:3000"
-    depends_on:
-      - backend
-      - websocket
-    develop:
-      watch:
-        - action: sync
-          path: ./frontend/devsyncpro-ui/src
-          target: /app/src
+    environment:
+      - WDS_SOCKET_PORT=0
+      - orchestrator
+      - relay

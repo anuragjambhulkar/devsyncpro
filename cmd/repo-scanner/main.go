@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"io"
+	"fmt"
 	"log"
 	"net/http"
 	"net/smtp"
@@ -14,6 +14,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"golang.org/x/mod/modfile"
+	// from scanner.go usage:
 )
 
 // --- Dependency Graph Types/APIs ---
@@ -49,28 +50,92 @@ var lastGraph = DepGraph{
 	Edges: []Edge{},
 }
 
+// --- Enhanced scanHandler for multi-lang + repo clone ---
 func scanHandler(w http.ResponseWriter, r *http.Request) {
 	type Req struct {
-		RepoPath string `json:"repoPath"`
+		RepoPath string `json:"repoPath,omitempty"`
+		RepoURL  string `json:"repo_url,omitempty"`
+		Ref      string `json:"ref,omitempty"`
+		Token    string `json:"token,omitempty"`
+		SubPath  string `json:"subpath,omitempty"`
 	}
 	var req Req
-	body, _ := io.ReadAll(r.Body)
-	_ = json.Unmarshal(body, &req)
-	deps, err := parseGoMod(req.RepoPath)
-	if err != nil {
-		log.Printf("scan error: %v\n", err)
-		http.Error(w, "Failed to scan: "+err.Error(), 400)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid json: "+err.Error(), 400)
 		return
 	}
-	nodes := []string{"main"}
-	edges := []Edge{}
-	for _, d := range deps {
-		nodes = append(nodes, d)
-		edges = append(edges, Edge{From: "main", To: d})
+
+	var scanRoot string
+	cleanup := false
+	if req.RepoURL != "" {
+		tmp, err := gitCloneToTemp(req.RepoURL, req.Ref, req.Token)
+		if err != nil {
+			http.Error(w, "clone failed: "+err.Error(), 500)
+			return
+		}
+		scanRoot = tmp
+		cleanup = true
+	} else if req.RepoPath != "" {
+		scanRoot = req.RepoPath
+	} else {
+		http.Error(w, "provide repo_url or repoPath", 400)
+		return
 	}
-	lastGraph = DepGraph{Nodes: nodes, Edges: edges}
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"scan complete"}`))
+
+	if req.SubPath != "" {
+		scanRoot = filepath.Join(scanRoot, req.SubPath)
+	}
+
+	graph, meta, err := scanRepoPathMulti(scanRoot)
+	if cleanup {
+		go func(p string) { time.Sleep(2 * time.Second); _ = os.RemoveAll(p) }(scanRoot)
+	}
+	if err != nil {
+		http.Error(w, "scan error: "+err.Error(), 500)
+		return
+	}
+
+	// Create unique report ID
+	reportID := fmt.Sprintf("rep_%d", time.Now().UnixNano())
+	newReport := Report{
+		ID:        reportID,
+		Graph:     graph,
+		Meta:      meta,
+		CreatedAt: time.Now(),
+	}
+
+	reportLock.Lock()
+	reportStore[reportID] = newReport
+	reportLock.Unlock()
+
+	// Build enriched response: graph + node metadata + reportID
+	resp := map[string]interface{}{
+		"report_id": reportID,
+		"graph":     graph,
+		"meta":      meta,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+func reportHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		// Try parsing from path if using a router, but here we just use query param for simplicity
+		id = filepath.Base(r.URL.Path)
+	}
+
+	reportLock.Lock()
+	report, ok := reportStore[id]
+	reportLock.Unlock()
+
+	if !ok {
+		http.Error(w, "report not found", 404)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(report)
 }
 
 func graphHandler(w http.ResponseWriter, r *http.Request) {
@@ -337,6 +402,7 @@ func main() {
 
 	http.HandleFunc("/diagnose", withCORS(handleDiagnoseIncident))
 	http.HandleFunc("/scan", withCORS(scanHandler))
+	http.HandleFunc("/reports/", withCORS(reportHandler))
 	http.HandleFunc("/graph", withCORS(graphHandler))
 	http.HandleFunc("/resolve", withCORS(handleResolveIncident))
 	http.HandleFunc("/incidents", withCORS(func(w http.ResponseWriter, r *http.Request) {

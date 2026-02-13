@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { CONFIG } from "../config";
 
 export const IncidentAddForm: React.FC<{ onAdd?: () => void }> = ({ onAdd }) => {
   const [form, setForm] = useState<{ type: string; service: string; message: string; severity: string }>({
@@ -21,7 +22,7 @@ export const IncidentAddForm: React.FC<{ onAdd?: () => void }> = ({ onAdd }) => 
       return;
     }
 
-    fetch("http://localhost:8081/incidents", {
+    fetch(`${CONFIG.ORCHESTRATOR_API}/incidents`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form)

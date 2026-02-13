@@ -1,0 +1,16 @@
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY backend/repo-scanner ./backend/repo-scanner
+# We need scanner.go too
+RUN go build -o scanner ./backend/repo-scanner
+
+FROM alpine:3.18
+RUN apk add --no-cache git
+WORKDIR /root/
+COPY --from=builder /app/scanner .
+EXPOSE 8081
+CMD ["./scanner"]

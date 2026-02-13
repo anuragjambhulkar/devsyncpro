@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { CONFIG } from "../config";
 
 type Incident = {
   id: number;
@@ -21,17 +22,24 @@ export const IncidentDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchIncidents();
-    const ws = new WebSocket("ws://localhost:8081/ws");
+    const ws = new WebSocket(CONFIG.WS_URL);
     ws.onmessage = evt => {
-      const incident = JSON.parse(evt.data);
-      setIncidents(curr => [incident, ...curr]);
+      try {
+        const payload = JSON.parse(evt.data);
+        // Only add if it's an incident (incidents have an 'id' and 'type' usually)
+        if (payload && payload.id && payload.service) {
+          setIncidents(curr => [payload as Incident, ...curr]);
+        }
+      } catch (e) {
+        console.error("WS parse error:", e);
+      }
     };
     return () => ws.close();
   }, []);
 
   function fetchIncidents() {
     setLoading(true);
-    fetch("http://localhost:8081/incidents")
+    fetch(`${CONFIG.ORCHESTRATOR_API}/incidents`)
       .then(r => r.json())
       .then(data => {
         setIncidents(Array.isArray(data) ? [...data].reverse() : []);
@@ -57,17 +65,28 @@ export const IncidentDashboard: React.FC = () => {
     setSelectedIds([]);
   }
   function bulkDiagnose() {
-    Promise.all(selectedIds.map(id =>
-      fetch("http://localhost:8081/diagnose", {
+    setActionMsg("Analyzing with AI...");
+    Promise.all(selectedIds.map(id => {
+      const inc = incidents.find(i => i.id === id);
+      return fetch(`${CONFIG.ANALYZER_API}/analyze`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id })
-      }).then(r => r.json().then(d => ({ id, fix: d.fix || "No suggestion" })))
-    )).then(results => {
+        body: JSON.stringify({
+          id,
+          type: inc?.type || "unknown",
+          service: inc?.service || "unknown",
+          message: inc?.message || ""
+        })
+      }).then(r => r.json().then(d => ({ id, fix: d.root_cause || "No suggestion" })))
+    })).then(results => {
       setDiag({
         ids: results.map(r => r.id),
-        text: results.map(r => `[${r.id}] ${r.fix}`).join("\n")
+        text: results.map(r => `[ID ${r.id}] ${r.fix}`).join("\n")
       });
-    }).catch(() => setDiag({ ids: selectedIds, text: "Diagnosis failed" }));
+      setActionMsg(null);
+    }).catch(() => {
+      setDiag({ ids: selectedIds, text: "AI Analysis failed. Is the analyzer service running?" });
+      setActionMsg(null);
+    });
   }
   function exportSelectedCSV() {
     const headers = ['id', 'type', 'service', 'status', 'severity', 'message', 'timestamp'];
@@ -88,7 +107,7 @@ export const IncidentDashboard: React.FC = () => {
   }
 
   function resolveIncident(id: number, refresh = true) {
-    fetch("http://localhost:8081/resolve", {
+    fetch(`${CONFIG.ORCHESTRATOR_API}/resolve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
@@ -167,10 +186,10 @@ export const IncidentDashboard: React.FC = () => {
         </thead>
         <tbody>
           {loading && (
-            <tr><td colSpan={9} style={{ textAlign: "center", color: "#aaa" }}>Loading incidents...</td></tr>
+            <tr key="loading"><td colSpan={9} style={{ textAlign: "center", color: "#aaa" }}>Loading incidents...</td></tr>
           )}
           {filtered.length === 0 && !loading && (
-            <tr>
+            <tr key="empty">
               <td colSpan={9} style={{ textAlign: "center", color: "#aaa" }}>No incidents yet.</td>
             </tr>
           )}

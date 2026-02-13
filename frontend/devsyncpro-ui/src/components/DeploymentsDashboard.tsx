@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { CONFIG } from "../config";
 
 type Deployment = {
   id: number;
@@ -23,7 +24,7 @@ export const DeploymentsDashboard: React.FC = () => {
   }, []);
 
   function fetchDeployments() {
-    fetch("http://localhost:8081/deployments")
+    fetch(`${CONFIG.ORCHESTRATOR_API}/deployments`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) setJobs([...data].reverse());
@@ -36,7 +37,7 @@ export const DeploymentsDashboard: React.FC = () => {
   function launchDeploy(e?: React.FormEvent) {
     if (e) e.preventDefault();
     setLoading(true);
-    fetch("http://localhost:8081/deployments", {
+    fetch(`${CONFIG.ORCHESTRATOR_API}/deployments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ service })
@@ -48,6 +49,7 @@ export const DeploymentsDashboard: React.FC = () => {
         setJobs(jobs => [job, ...jobs]);
         setTimeout(() => setMsg(null), 1300);
         setLoading(false);
+        setSelectedIds([]);
       })
       .catch(() => setLoading(false));
   }
@@ -90,13 +92,13 @@ export const DeploymentsDashboard: React.FC = () => {
 
   // Mark as successful (dummy implementation, replace with actual)
   function markSuccess(id: number, refresh = true) {
-    fetch(`http://localhost:8081/deployment/mark-success`, {
+    fetch(`${CONFIG.ORCHESTRATOR_API}/deployment/mark-success`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
     })
       .then(() => { if (refresh) fetchDeployments(); })
-      .catch(() => {});
+      .catch(() => { });
   }
 
   const filtered = filter === "all" ? jobs : jobs.filter(j => j.status === filter);
@@ -157,15 +159,15 @@ export const DeploymentsDashboard: React.FC = () => {
         </thead>
         <tbody>
           {filtered.length === 0 && (
-            <tr><td colSpan={5} style={{ textAlign: "center" }}>No deployments yet.</td></tr>
+            <tr key="empty"><td colSpan={5} style={{ textAlign: "center" }}>No deployments yet.</td></tr>
           )}
           {filtered.map(j =>
             <tr key={j.id} style={{
               background: j.status === "failed" ? "#702922"
                 : j.status === "success" ? "#234f1f"
-                : j.status === "running" ? "#23606d"
-                : j.status === "pending" ? "#334"
-                : undefined
+                  : j.status === "running" ? "#23606d"
+                    : j.status === "pending" ? "#334"
+                      : undefined
             }}>
               <td>
                 <input
@@ -179,8 +181,8 @@ export const DeploymentsDashboard: React.FC = () => {
               <td style={{
                 color: j.status === "failed" ? "#e55"
                   : j.status === "success" ? "#5e5"
-                  : j.status === "running" ? "#ffe397"
-                  : "#fff"
+                    : j.status === "running" ? "#ffe397"
+                      : "#fff"
               }}>
                 {j.status}
               </td>

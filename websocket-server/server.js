@@ -1,46 +1,39 @@
-const WebSocket = require("ws");
+// websocket-server/server.js
+// Improved combined HTTP + WebSocket server
 const http = require("http");
+const WebSocket = require("ws");
 
-// --- Start WebSocket server on 8081 with Docker-friendly binding ---
-const wss = new WebSocket.Server({ port: 8081, host: "0.0.0.0" });
+const PORT = parseInt(process.env.PORT || "9000", 10);
+const WS_PATH = process.env.WS_PATH || "/ws";
+const KEEPALIVE_MS = 30000;
 
-wss.on("connection", ws => {
-  console.log("WebSocket client connected");
-  ws.isAlive = true;
-  ws.send(JSON.stringify({ type: "info", message: "Connected to DevSyncPro Live Event Stream" }));
-
-  ws.on("pong", () => { ws.isAlive = true; });
-  ws.on("close", (code, reason) => {
-    console.log("WebSocket client disconnected", { code, reason });
-  });
-  ws.on("error", err => {
-    console.log("WebSocket error:", err && err.message);
-  });
-});
-
-// --- Keepalive: ping/pong every 30s ---
-const interval = setInterval(() => {
-  wss.clients.forEach(ws => {
-    if (ws.isAlive === false) {
-      ws.terminate();
-      return;
-    }
-    ws.isAlive = false;
-    ws.ping();
-  });
-}, 30000);
-
-wss.on("close", () => clearInterval(interval));
-console.log("WebSocket server running on ws://0.0.0.0:8081");
-
-// --- HTTP POST endpoint for deploy events, with CORS ---
 const server = http.createServer((req, res) => {
+  // Basic CORS for the emit endpoint
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
   if (req.method === "OPTIONS") {
-    res.writeHead(200);
+    res.writeHead(204);
     res.end();
+    return;
+  }
+
+  if (req.url === "/relay" && req.method === "POST") {
+    let body = "";
+    req.on("data", chunk => { body += chunk; });
+    req.on("end", () => {
+      try {
+        const payload = JSON.parse(body);
+        // payload should have { type, ...data }
+        broadcast(payload);
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("ok");
+      } catch (err) {
+        res.writeHead(400, { "Content-Type": "text/plain" });
+        res.end("invalid json");
+      }
+    });
     return;
   }
 
@@ -48,26 +41,85 @@ const server = http.createServer((req, res) => {
     let body = "";
     req.on("data", chunk => { body += chunk; });
     req.on("end", () => {
-      let repo;
       try {
-        repo = JSON.parse(body).repo;
-      } catch (_) {
-        res.writeHead(400); res.end("invalid data"); return;
-      }
-      wss.clients.forEach(client => {
-        client.send(JSON.stringify({
+        const parsed = JSON.parse(body);
+        const payload = {
           type: "repo-update",
-          repo,
+          repo: parsed.repo,
           event: "deployed",
           timestamp: new Date().toISOString()
-        }));
-      });
-      res.writeHead(200);
-      res.end("ok");
+        };
+        broadcast(payload);
+        res.writeHead(200, { "Content-Type": "text/plain" });
+        res.end("ok");
+      } catch (err) {
+        res.writeHead(400, { "Content-Type": "text/plain" });
+        res.end("invalid json");
+      }
     });
-  } else {
-    res.writeHead(404); res.end();
+    return;
   }
+
+  function broadcast(payload) {
+    const msg = JSON.stringify(payload);
+    let sent = 0;
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(msg);
+        sent++;
+      }
+    });
+    console.log(`Relayed event type [${payload.type}], broadcast to ${sent} clients`);
+  }
+
+  // default 404
+  res.writeHead(404, { "Content-Type": "text/plain" });
+  res.end("not found");
 });
-server.listen(9000, "0.0.0.0");
-console.log("HTTP server running on http://0.0.0.0:9000");
+
+// Attach WebSocket server to the existing HTTP server on a path
+const wss = new WebSocket.Server({ server, path: WS_PATH });
+
+wss.on("connection", (ws, req) => {
+  console.log("WebSocket client connected:", req.socket.remoteAddress);
+  ws.isAlive = true;
+
+  // Send welcome message
+  ws.send(JSON.stringify({
+    type: "info",
+    message: "Connected to DevSyncPro Live Event Stream"
+  }));
+
+  ws.on("pong", () => { ws.isAlive = true; });
+
+  ws.on("message", (msg) => {
+    // Optionally handle messages from clients
+    // console.log("Received message from client:", String(msg));
+  });
+
+  ws.on("close", (code, reason) => {
+    console.log("WebSocket client disconnected:", code, reason && reason.toString());
+  });
+  ws.on("error", (err) => {
+    console.log("WebSocket error:", err && err.message);
+  });
+});
+
+// Keepalive ping/pong
+const interval = setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) {
+      try { ws.terminate(); } catch (e) { }
+      return;
+    }
+    ws.isAlive = false;
+    try { ws.ping(); } catch (e) { }
+  });
+}, KEEPALIVE_MS);
+
+wss.on("close", () => clearInterval(interval));
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`HTTP+WS server listening at http://0.0.0.0:${PORT}`);
+  console.log(`WebSocket endpoint available at ws://<host>:${PORT}${WS_PATH}`);
+});
