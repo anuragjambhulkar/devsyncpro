@@ -1,5 +1,6 @@
 services:
-  - type: static_site
+  - type: web
     name: devsyncpro-frontend
+    runtime: static
     buildCommand: npm run build
     staticPublishPath: frontend/devsyncpro-ui/build
