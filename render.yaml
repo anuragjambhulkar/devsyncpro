@@ -2,5 +2,6 @@ services:
   - type: web
     name: devsyncpro-ui-static
     runtime: static
-    buildCommand: npm run build
-    staticPublishPath: frontend/devsyncpro-ui/build
+    rootDir: frontend/devsyncpro-ui
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
