@@ -357,7 +357,7 @@ export const DependencyScannerPanel: React.FC = () => {
                 });
                 const data = await res.json();
                 alert(`Redirecting to: ${data.checkout_url}\nSession ID: ${data.session_id}`);
-                window.location.reload(); // Refresh to see DRR update in experiments
+                window.location.href = data.checkout_url;
               } catch (e) {
                 alert("Payment failed to initialize.");
               }
