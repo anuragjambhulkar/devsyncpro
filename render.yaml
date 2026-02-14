@@ -1,7 +1,6 @@
 services:
   - type: web
-    name: devsyncpro-frontend
+    name: devsyncpro-ui-static
     runtime: static
-    repo: https://github.com/anuragjambhulkar/devsyncpro
     buildCommand: npm run build
-    publishPath: frontend/devsyncpro-ui/build
+    staticPublishPath: frontend/devsyncpro-ui/build
