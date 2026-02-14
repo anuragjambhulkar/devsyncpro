@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: devsyncpro-frontend
+    runtime: node
+    buildCommand: npm run build
+    staticPublishPath: frontend/devsyncpro-ui/build
+    envVars:
+      - key: NODE_VERSION
+        value: 20
