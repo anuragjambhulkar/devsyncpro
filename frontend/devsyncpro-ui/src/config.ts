@@ -14,7 +14,7 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
         const hostParts = fullHost.split(".")[0].split("-");
 
         // Strategy: Find the 'project prefix' by identifying the part before '-ui' or using the first part
-        let prefix = hostParts[0];
+        let prefix = "devsyncpro";
         const uiIndex = hostParts.indexOf("ui");
         if (uiIndex > 0) {
             prefix = hostParts.slice(0, uiIndex).join("-");

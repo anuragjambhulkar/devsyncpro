@@ -1,6 +1,6 @@
 module github.com/anuragjambhulkar/devsyncpro-backend
 
-go 1.23.0
+go 1.24.0
 
 require golang.org/x/mod v0.27.0
 
@@ -8,6 +8,8 @@ require (
 	cloud.google.com/go/bigquery v1.72.0
 	cloud.google.com/go/pubsub v1.50.1
 	github.com/gorilla/websocket v1.5.3
+	gorm.io/driver/postgres v1.6.0
+	gorm.io/gorm v1.31.1
 )
 
 require (
@@ -60,6 +62,4 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090 // indirect
 	google.golang.org/grpc v1.75.1 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
-	gorm.io/driver/postgres v1.6.0 // indirect
-	gorm.io/gorm v1.31.1 // indirect
 )
