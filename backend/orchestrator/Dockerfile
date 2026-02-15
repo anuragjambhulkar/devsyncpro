@@ -4,7 +4,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY backend/orchestrator ./backend/orchestrator
+COPY backend ./backend
 RUN go build -o orchestrator ./backend/orchestrator
 
 FROM alpine:3.18

@@ -4,7 +4,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY backend/repo-scanner ./backend/repo-scanner
+COPY backend ./backend
 # We need scanner.go too
 RUN go build -o scanner ./backend/repo-scanner
 
