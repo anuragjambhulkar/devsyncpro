@@ -1,7 +1,7 @@
 services:
   # Backend Services
   - type: web
-    name: devsyncpro-repo-scanner
+    name: devsyncpro-scanner
     runtime: docker
     plan: free
     dockerFilePath: backend/repo-scanner/Dockerfile
@@ -32,7 +32,7 @@ services:
           property: url
 
   - type: web
-    name: devsyncpro-ai-analyzer
+    name: devsyncpro-analyzer
     runtime: docker
     plan: free
     dockerFilePath: backend/ai-analyzer/Dockerfile
@@ -66,19 +66,20 @@ services:
           property: url
       - key: REACT_APP_SCANNER_API
         fromService:
-          name: devsyncpro-repo-scanner
+          name: devsyncpro-scanner
           type: web
           property: url
       - key: REACT_APP_ANALYZER_API
         fromService:
-          name: devsyncpro-ai-analyzer
+          name: devsyncpro-analyzer
           type: web
           property: url
-      - key: REACT_APP_WS_URL
+      - key: REACT_APP_RELAY_API
         fromService:
           name: devsyncpro-relay
           type: web
           property: url
+
 
 
 

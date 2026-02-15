@@ -26,11 +26,12 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
 };
 
 export const CONFIG = {
-    SCANNER_API: getRenderUrl("repo-scanner", 8081),
+    SCANNER_API: getRenderUrl("scanner", 8081),
     ORCHESTRATOR_API: getRenderUrl("orchestrator", 8082),
-    ANALYZER_API: getRenderUrl("ai-analyzer", 8083),
+    ANALYZER_API: getRenderUrl("analyzer", 8083),
     WS_URL: `${wsProtocol}//${getRenderUrl("relay", 9000).replace("https://", "").replace("http://", "")}/ws`
 };
+
 
 
 
