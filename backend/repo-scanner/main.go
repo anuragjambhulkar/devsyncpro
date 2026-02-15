@@ -39,8 +39,13 @@ func initPubSub() {
 }
 
 func initDB() {
+	host := os.Getenv("DB_HOST")
+	if host == "" {
+		log.Println("DB_HOST not set, skipping DB init")
+		return
+	}
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=5432 sslmode=disable",
-		os.Getenv("DB_HOST"),
+		host,
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASS"),
 		os.Getenv("DB_NAME"),
@@ -48,7 +53,7 @@ func initDB() {
 	var err error
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Printf("Failed to connect to database: %v. Running in MEMORY-ONLY mode (legacy).", err)
+		log.Printf("Failed to connect to database: %v. Running without persistence.", err)
 		return
 	}
 	log.Println("Connected to PostgreSQL successfully.")
@@ -56,9 +61,10 @@ func initDB() {
 	// Auto Migrate
 	err = db.AutoMigrate(&Scan{}, &NodeModel{}, &EdgeModel{})
 	if err != nil {
-		log.Fatalf("Failed to migrate database schema: %v", err)
+		log.Printf("Failed to migrate database schema: %v", err)
+	} else {
+		log.Println("Database migration completed.")
 	}
-	log.Println("Database migration completed.")
 }
 
 func publishScanEvent(repo string, nodes int) {
