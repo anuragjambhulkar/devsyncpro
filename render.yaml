@@ -1,3 +1,4 @@
+# Render Blueprint for DevSyncPro - Trigger Deploy v2.2
 services:
   # Backend Services
   - type: web
