@@ -5,6 +5,7 @@ services:
     runtime: docker
     plan: free
     dockerFilePath: backend/repo-scanner/Dockerfile
+    dockerContext: .
     envVars:
       - key: PORT
         value: 10000
@@ -18,6 +19,7 @@ services:
     runtime: docker
     plan: free
     dockerFilePath: backend/orchestrator/Dockerfile
+    dockerContext: .
     envVars:
       - key: PORT
         value: 10000
@@ -36,6 +38,7 @@ services:
     runtime: docker
     plan: free
     dockerFilePath: backend/ai-analyzer/Dockerfile
+    dockerContext: .
     envVars:
       - key: PORT
         value: 10000
@@ -47,6 +50,7 @@ services:
     runtime: docker
     plan: free
     dockerFilePath: websocket-server/Dockerfile
+    dockerContext: .
     envVars:
       - key: PORT
         value: 10000
@@ -79,6 +83,7 @@ services:
           name: devsyncpro-relay
           type: web
           property: url
+
 
 
 
