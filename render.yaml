@@ -1,12 +1,12 @@
-# Render Blueprint for DevSyncPro - Trigger Deploy v2.4
+# Render Blueprint for DevSyncPro - Trigger Deploy v3.1
 services:
   # Backend Services
   - type: web
     name: dsp-scanner
-    env: docker
+    runtime: docker
     plan: free
-    dockerfilePath: backend/repo-scanner/Dockerfile
     dockerContext: .
+    dockerfilePath: backend/repo-scanner/Dockerfile
     envVars:
       - key: PORT
         value: 10000
@@ -17,10 +17,10 @@ services:
 
   - type: web
     name: dsp-orchestrator
-    env: docker
+    runtime: docker
     plan: free
-    dockerfilePath: backend/orchestrator/Dockerfile
     dockerContext: .
+    dockerfilePath: backend/orchestrator/Dockerfile
     envVars:
       - key: PORT
         value: 10000
@@ -36,10 +36,10 @@ services:
 
   - type: web
     name: dsp-analyzer
-    env: docker
+    runtime: docker
     plan: free
-    dockerfilePath: backend/ai-analyzer/Dockerfile
     dockerContext: .
+    dockerfilePath: backend/ai-analyzer/Dockerfile
     envVars:
       - key: PORT
         value: 10000
@@ -48,10 +48,10 @@ services:
 
   - type: web
     name: dsp-relay
-    env: docker
+    runtime: docker
     plan: free
-    dockerfilePath: websocket-server/Dockerfile
     dockerContext: .
+    dockerfilePath: websocket-server/Dockerfile
     envVars:
       - key: PORT
         value: 10000
