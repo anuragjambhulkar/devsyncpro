@@ -28,6 +28,13 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
             // Priority: devsyncpro-3 (Confirmed live in dashboard)
             return `https://${prefix}-3.onrender.com`;
         }
+        if (serviceName === "orchestrator") {
+            // Fallback strategy: try [prefix]-1 or [prefix] if blueprint fails
+            return `https://${prefix}-1.onrender.com`;
+        }
+        if (serviceName === "analyzer") {
+            return `https://${prefix}-4.onrender.com`;
+        }
 
         console.log(`CONFIG_DISCOVERY: Service [${serviceName}] searching for prefix [${prefix}]`);
         return `https://${prefix}-${serviceName}.onrender.com`.replace("--", "-");
