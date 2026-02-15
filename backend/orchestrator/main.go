@@ -323,6 +323,7 @@ func handleCreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 
 func withCORS(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Incoming %s request to %s from %s", r.Method, r.URL.Path, r.Header.Get("Origin"))
 		origin := r.Header.Get("Origin")
 		if origin == "" {
 			origin = "*"
@@ -339,9 +340,15 @@ func withCORS(h http.HandlerFunc) http.HandlerFunc {
 		h(w, r)
 	}
 }
+ Broadway 
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "DevSyncPro Orchestrator Live")
+}
 
 func main() {
 	initGCP()
+	http.HandleFunc("/", withCORS(rootHandler))
 	http.HandleFunc("/incidents", withCORS(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			handlePostIncident(w, r)

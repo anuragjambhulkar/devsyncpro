@@ -242,6 +242,7 @@ func graphHandler(w http.ResponseWriter, r *http.Request) {
 
 func withCORS(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Incoming %s request to %s from %s", r.Method, r.URL.Path, r.Header.Get("Origin"))
 		origin := r.Header.Get("Origin")
 		if origin == "" {
 			origin = "*"
@@ -259,9 +260,15 @@ func withCORS(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "DevSyncPro Repo Scanner Live")
+}
+
 func main() {
 	initPubSub()
 	initDB()
+	http.HandleFunc("/", withCORS(rootHandler))
 	http.HandleFunc("/scan", withCORS(scanHandler))
 	http.HandleFunc("/graph", withCORS(graphHandler))
 	http.HandleFunc("/health", withCORS(func(w http.ResponseWriter, r *http.Request) {
