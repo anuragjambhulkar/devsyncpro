@@ -324,6 +324,7 @@ func handleCreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 
 func withCORS(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("CORS_DEBUG: %s %s (Origin: %s)", r.Method, r.URL.Path, r.Header.Get("Origin"))
 		origin := r.Header.Get("Origin")
 		if origin == "" {
 			origin = "*"
@@ -368,7 +369,12 @@ func main() {
 	mux.HandleFunc("/payments/checkout", handleCreateCheckoutSession)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "healthy", "service": "orchestrator"})
+		json.NewEncoder(w).Encode(map[string]string{"status": "healthy", "service": "orchestrator", "v": "2.0"})
+	})
+	// Catch-all to health for any unmatched routes (to avoid 404s during debugging)
+	mux.HandleFunc("/any", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"debug": "catch-all", "path": r.URL.Path})
 	})
 
 	port := os.Getenv("PORT")

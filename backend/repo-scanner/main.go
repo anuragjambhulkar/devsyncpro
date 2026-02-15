@@ -242,6 +242,7 @@ func graphHandler(w http.ResponseWriter, r *http.Request) {
 
 func withCORS(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("CORS_DEBUG: %s %s (Origin: %s)", r.Method, r.URL.Path, r.Header.Get("Origin"))
 		origin := r.Header.Get("Origin")
 		if origin == "" {
 			origin = "*"
@@ -273,7 +274,11 @@ func main() {
 	mux.HandleFunc("/graph", graphHandler)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "healthy", "service": "repo-scanner"})
+		json.NewEncoder(w).Encode(map[string]string{"status": "healthy", "service": "repo-scanner", "v": "2.0"})
+	})
+	mux.HandleFunc("/any", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"debug": "catch-all", "path": r.URL.Path})
 	})
 
 	port := os.Getenv("PORT")
