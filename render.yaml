@@ -53,7 +53,7 @@ services:
 
   # Frontend Static Site
   - type: web
-    name: devsyncpro-ui
+    name: devsyncpro-ui-static
     runtime: static
     rootDir: frontend/devsyncpro-ui
     buildCommand: npm install && npm run build
@@ -79,6 +79,8 @@ services:
           name: devsyncpro-relay
           type: web
           property: url
+ Broadway 
+
 
 
 
