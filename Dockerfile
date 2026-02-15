@@ -1,16 +1,16 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY cmd/repo-scanner ./cmd/repo-scanner
-
-RUN go build -tags netgo -ldflags '-s -w' -o app ./cmd/repo-scanner
+COPY backend ./backend
+RUN CGO_ENABLED=0 go build -o app ./backend/repo-scanner
 
 FROM alpine:3.18
+RUN apk add --no-cache git
 WORKDIR /root/
 COPY --from=builder /app/app .
-EXPOSE 8080
+EXPOSE 10000
 CMD ["./app"]
