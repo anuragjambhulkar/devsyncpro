@@ -24,6 +24,11 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
         // 2. [prefix]-3.onrender.com (Observed in screenshot as a Docker service)
         // 3. [prefix].onrender.com (Direct name)
 
+        if (serviceName === "scanner") {
+            // Priority: devsyncpro-3 (Confirmed live in dashboard)
+            return `https://${prefix}-3.onrender.com`;
+        }
+
         console.log(`CONFIG_DISCOVERY: Service [${serviceName}] searching for prefix [${prefix}]`);
         return `https://${prefix}-${serviceName}.onrender.com`.replace("--", "-");
     }
