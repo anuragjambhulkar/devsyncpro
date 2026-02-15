@@ -7,7 +7,7 @@ services:
     dockerFilePath: backend/repo-scanner/Dockerfile
     envVars:
       - key: PORT
-        value: 8081
+        value: 10000
       - key: GOOGLE_CLOUD_PROJECT
         sync: false
       - key: PUBSUB_TOPIC_SCAN
@@ -20,7 +20,7 @@ services:
     dockerFilePath: backend/orchestrator/Dockerfile
     envVars:
       - key: PORT
-        value: 8082
+        value: 10000
       - key: GOOGLE_CLOUD_PROJECT
         sync: false
       - key: PUBSUB_TOPIC_OPERATIONS
@@ -38,7 +38,7 @@ services:
     dockerFilePath: backend/ai-analyzer/Dockerfile
     envVars:
       - key: PORT
-        value: 8083
+        value: 10000
       - key: GOOGLE_CLOUD_PROJECT
         sync: false
 
@@ -49,7 +49,7 @@ services:
     dockerFilePath: websocket-server/Dockerfile
     envVars:
       - key: PORT
-        value: 9000
+        value: 10000
 
   # Frontend Static Site
   - type: web
@@ -74,11 +74,12 @@ services:
           name: devsyncpro-analyzer
           type: web
           property: url
-      - key: REACT_APP_RELAY_API
+      - key: REACT_APP_WS_URL
         fromService:
           name: devsyncpro-relay
           type: web
           property: url
+
 
 
 

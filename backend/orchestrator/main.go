@@ -322,9 +322,8 @@ func handleCreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func withCORS(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Incoming %s request to %s from %s", r.Method, r.URL.Path, r.Header.Get("Origin"))
+func withCORS(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 		if origin == "" {
 			origin = "*"
@@ -338,8 +337,8 @@ func withCORS(h http.HandlerFunc) http.HandlerFunc {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
-		h(w, r)
-	}
+		h.ServeHTTP(w, r)
+	})
 }
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
@@ -348,34 +347,35 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	initGCP()
-	http.HandleFunc("/", withCORS(rootHandler))
-	http.HandleFunc("/incidents", withCORS(func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", rootHandler)
+	mux.HandleFunc("/incidents", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			handlePostIncident(w, r)
 		} else {
 			handleGetIncidents(w, r)
 		}
-	}))
-	http.HandleFunc("/resolve", withCORS(handleResolveIncident))
-	http.HandleFunc("/deployments", withCORS(func(w http.ResponseWriter, r *http.Request) {
+	})
+	mux.HandleFunc("/resolve", handleResolveIncident)
+	mux.HandleFunc("/deployments", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			handlePostDeployment(w, r)
 		} else {
 			handleGetDeployments(w, r)
 		}
-	}))
-	http.HandleFunc("/metrics", withCORS(handleMetrics))
-	http.HandleFunc("/payments/checkout", withCORS(handleCreateCheckoutSession))
-	http.HandleFunc("/health", withCORS(func(w http.ResponseWriter, r *http.Request) {
+	})
+	mux.HandleFunc("/metrics", handleMetrics)
+	mux.HandleFunc("/payments/checkout", handleCreateCheckoutSession)
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"status": "healthy", "service": "orchestrator"})
-	}))
+	})
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8082" // Different port for Orchestrator
+		port = "10000" // Standard Render Port
 	}
 
 	log.Printf("DevSyncPro Orchestrator running on :%s", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, withCORS(mux)))
 }

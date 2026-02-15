@@ -240,9 +240,8 @@ func graphHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-func withCORS(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Incoming %s request to %s from %s", r.Method, r.URL.Path, r.Header.Get("Origin"))
+func withCORS(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 		if origin == "" {
 			origin = "*"
@@ -256,8 +255,8 @@ func withCORS(h http.HandlerFunc) http.HandlerFunc {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
-		h(w, r)
-	}
+		h.ServeHTTP(w, r)
+	})
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
@@ -268,19 +267,20 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	initPubSub()
 	initDB()
-	http.HandleFunc("/", withCORS(rootHandler))
-	http.HandleFunc("/scan", withCORS(scanHandler))
-	http.HandleFunc("/graph", withCORS(graphHandler))
-	http.HandleFunc("/health", withCORS(func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", rootHandler)
+	mux.HandleFunc("/scan", scanHandler)
+	mux.HandleFunc("/graph", graphHandler)
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"status": "healthy", "service": "repo-scanner"})
-	}))
+	})
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8081"
+		port = "10000" // Standard Render Port
 	}
 
 	log.Printf("DevSyncPro Repo Scanner running on :%s", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, withCORS(mux)))
 }
