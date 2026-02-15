@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -340,7 +341,6 @@ func withCORS(h http.HandlerFunc) http.HandlerFunc {
 		h(w, r)
 	}
 }
- Broadway 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "DevSyncPro Orchestrator Live")
