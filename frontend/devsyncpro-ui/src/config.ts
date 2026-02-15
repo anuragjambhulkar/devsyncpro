@@ -5,22 +5,28 @@ const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 const getRenderUrl = (serviceName: string, defaultPort: number) => {
     if (!isProd) return `http://localhost:${defaultPort}`;
 
-    // 1. Try predefined Env Var (Mapped via Render Blueprint)
     const envKey = `REACT_APP_${serviceName.toUpperCase().replace(/-/g, "_")}_API`;
     const envVal = (process.env as any)[envKey];
     if (envVal) return envVal;
 
-    // 2. Intelligent Auto-Detection for Render Environments
     if (window.location.hostname.includes("onrender.com")) {
-        const hostName = window.location.hostname.split(".")[0];
+        const fullHost = window.location.hostname;
+        const hostParts = fullHost.split(".")[0].split("-");
 
-        // Strategy: Detect project prefix by stripping UI suffixes
-        // Example: 'devsyncpro-ui-static' -> 'devsyncpro'
-        const systemBase = hostName.split("-ui")[0].replace("-static", "");
+        // Strategy: Find the 'project prefix' by identifying the part before '-ui' or using the first part
+        let prefix = hostParts[0];
+        const uiIndex = hostParts.indexOf("ui");
+        if (uiIndex > 0) {
+            prefix = hostParts.slice(0, uiIndex).join("-");
+        }
 
-        // Expected URL: https://[systemBase]-[serviceName].onrender.com
-        // We avoid adding '-static' to the service name as it's almost always wrong for backends
-        return `https://${systemBase}-${serviceName}.onrender.com`.replace("--", "-");
+        // Possible patterns:
+        // 1. [prefix]-[service].onrender.com (Standard)
+        // 2. [prefix]-static-[service].onrender.com (Observed in logs)
+        // 3. [service].onrender.com (Direct)
+
+        // We favor [prefix]-[service] as it's the most common blueprint behavior
+        return `https://${prefix}-${serviceName}.onrender.com`.replace("--", "-");
     }
     return `http://localhost:${defaultPort}`;
 };
@@ -31,6 +37,7 @@ export const CONFIG = {
     ANALYZER_API: getRenderUrl("analyzer", 10000),
     WS_URL: `${wsProtocol}//${getRenderUrl("relay", 10000).replace("https://", "").replace("http://", "")}/ws`
 };
+
 Broadway
 
 
