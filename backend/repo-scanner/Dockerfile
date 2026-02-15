@@ -12,5 +12,5 @@ FROM alpine:3.18
 RUN apk add --no-cache git
 WORKDIR /root/
 COPY --from=builder /app/scanner .
-EXPOSE 8081
+EXPOSE 10000
 CMD ["./scanner"]

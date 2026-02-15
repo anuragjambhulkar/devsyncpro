@@ -6,5 +6,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ai-analyzer/analyzer.py .
 
-EXPOSE 8083
-CMD ["uvicorn", "analyzer:app", "--host", "0.0.0.0", "--port", "8083"]
+EXPOSE 10000
+CMD ["uvicorn", "analyzer:app", "--host", "0.0.0.0", "--port", "10000"]

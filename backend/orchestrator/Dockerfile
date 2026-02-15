@@ -10,5 +10,5 @@ RUN go build -o orchestrator ./backend/orchestrator
 FROM alpine:3.18
 WORKDIR /root/
 COPY --from=builder /app/orchestrator .
-EXPOSE 8082
+EXPOSE 10000
 CMD ["./orchestrator"]

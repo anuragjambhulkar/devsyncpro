@@ -3,7 +3,7 @@
 const http = require("http");
 const WebSocket = require("ws");
 
-const PORT = parseInt(process.env.PORT || "9000", 10);
+const PORT = parseInt(process.env.PORT || "10000", 10);
 const WS_PATH = process.env.WS_PATH || "/ws";
 const KEEPALIVE_MS = 30000;
 
