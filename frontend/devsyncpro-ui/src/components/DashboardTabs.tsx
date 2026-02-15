@@ -9,47 +9,48 @@ export const DashboardTabs: React.FC = () => {
   const [tab, setTab] = useState<"scanner" | "incidents" | "deployments" | "metrics">("scanner");
 
   const navItemStyle = (active: boolean) => ({
-    padding: "10px 20px",
+    padding: "12px 24px",
     borderRadius: "12px",
     cursor: "pointer",
     border: "none",
     fontSize: "15px",
     fontWeight: 600,
-    transition: "all 0.3s ease",
-    background: active ? "linear-gradient(135deg, #3a7bd5, #00d2ff)" : "transparent",
-    color: active ? "#fff" : "#a0a0a0",
-    boxShadow: active ? "0 4px 15px rgba(0, 210, 255, 0.3)" : "none",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    background: active ? "linear-gradient(135deg, var(--primary), var(--secondary))" : "transparent",
+    color: active ? "#fff" : "var(--text-dim)",
+    boxShadow: active ? "0 8px 20px rgba(56, 189, 248, 0.3)" : "none",
+    margin: "0 4px"
   });
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 20px" }}>
-      <header style={{ marginBottom: "40px", textAlign: "center" }}>
-        <h1 style={{
-          fontSize: "2.5rem",
+    <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "40px 20px" }} className="animate-fade-in">
+      <header style={{ marginBottom: "50px", textAlign: "center" }}>
+        <h1 className="glow-text" style={{
+          fontSize: "3.5rem",
           fontWeight: 800,
-          background: "linear-gradient(to right, #00d2ff, #3a7bd5)",
+          background: "linear-gradient(to right, var(--primary), var(--secondary), var(--accent))",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
-          marginBottom: "8px"
+          marginBottom: "12px",
+          letterSpacing: "-0.02em"
         }}>
           DevSyncPro
         </h1>
-        <p style={{ color: "#707070", fontSize: "1.1rem" }}>Engineering Workflow Orchestration Platform</p>
+        <p style={{ color: "var(--text-dim)", fontSize: "1.25rem", fontWeight: 300 }}>
+          High-Velocity Engineering Workflow Orchestration
+        </p>
       </header>
 
-      <nav style={{
-        display: "flex",
+      <nav className="glass-panel" style={{
+        display: "inline-flex",
         justifyContent: "center",
-        gap: "10px",
-        background: "rgba(35, 36, 43, 0.5)",
-        backdropFilter: "blur(10px)",
         padding: "8px",
-        borderRadius: "16px",
-        marginBottom: "32px",
-        border: "1px solid rgba(255, 255, 255, 0.05)",
+        marginBottom: "40px",
         position: "sticky",
         top: "20px",
-        zIndex: 100
+        zIndex: 100,
+        left: "50%",
+        transform: "translateX(-50%)"
       }}>
         <button style={navItemStyle(tab === "scanner")} onClick={() => setTab("scanner")}>Scanner</button>
         <button style={navItemStyle(tab === "incidents")} onClick={() => setTab("incidents")}>Incidents</button>
@@ -57,17 +58,14 @@ export const DashboardTabs: React.FC = () => {
         <button style={navItemStyle(tab === "metrics")} onClick={() => setTab("metrics")}>Metrics</button>
       </nav>
 
-      <div style={{
-        background: "rgba(25, 26, 31, 0.4)",
-        borderRadius: "24px",
-        padding: "30px",
-        minHeight: "500px",
-        border: "1px solid rgba(255, 255, 255, 0.03)",
-        boxShadow: "0 20px 40px rgba(0, 0, 0, 0.2)"
+      <main className="glass-panel" style={{
+        padding: "40px",
+        minHeight: "600px",
+        background: "rgba(15, 23, 42, 0.6)"
       }}>
         {tab === "scanner" && <DependencyScannerPanel />}
         {tab === "incidents" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "30px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "40px" }}>
             <div style={{ position: "sticky", top: "100px", height: "fit-content" }}>
               <IncidentAddForm />
             </div>
@@ -78,10 +76,17 @@ export const DashboardTabs: React.FC = () => {
         )}
         {tab === "deployments" && <DeploymentsDashboard />}
         {tab === "metrics" && <MetricsPanel />}
-      </div>
+      </main>
 
-      <footer style={{ marginTop: "60px", padding: "40px", borderTop: "1px solid rgba(255, 255, 255, 0.05)", textAlign: "center", color: "#505050" }}>
-        &copy; 2026 DevSyncPro &bull; Cloud-Native CI/CD Orchestration
+      <footer style={{
+        marginTop: "80px",
+        padding: "40px",
+        borderTop: "1px solid var(--glass-border)",
+        textAlign: "center",
+        color: "var(--text-dim)",
+        fontSize: "0.9rem"
+      }}>
+        &copy; 2026 DevSyncPro &bull; Precision Engineered for Scale &bull; ₹8k Daily Value Engine
       </footer>
     </div>
   );

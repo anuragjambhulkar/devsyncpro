@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from typing import List, Optional
 import datetime
 import os
+import json
+
 try:
     import vertexai
     from vertexai.generative_models import GenerativeModel
@@ -37,6 +39,18 @@ class AnalysisResponse(BaseModel):
     root_cause: str
     remediation_steps: List[str]
     confidence_score: float
+    fix_suggestion: Optional[str] = None
+
+class RefactorRequest(BaseModel):
+    code_context: str
+    file_path: Optional[str] = None
+    focus_area: Optional[str] = "performance"
+
+class RefactorResponse(BaseModel):
+    original_code: str
+    refactored_code: str
+    explanation: str
+    estimated_impact: str
 
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_incident(incident: IncidentData):
@@ -49,26 +63,35 @@ async def analyze_incident(incident: IncidentData):
             Log Message: {incident.message}
             
             Provide:
-            1. Root cause (one sentence)
-            2. 3 Remediation steps
-            3. Confidence score (0-1)
+            1. Root cause (detailed engineering analysis)
+            2. 4-5 Specific remediation steps
+            3. A high-quality code fix suggestion in markdown (if applicable)
+            4. Confidence score (0-1)
             
             Return ONLY JSON format:
-            {{"root_cause": "...", "remediation_steps": ["step1", "step2", "step3"], "confidence_score": 0.95}}
+            {{
+                "root_cause": "...",
+                "remediation_steps": ["step1", "step2", ...],
+                "fix_suggestion": "```...```",
+                "confidence_score": 0.95
+            }}
             """
             response = model.generate_content(prompt)
-            import json
-            # Extract JSON from response text (naive search for {{)
             text = response.text
             start = text.find("{{")
             end = text.rfind("}}") + 1
+            if start == -1: # fallback to simple { }
+                start = text.find("{")
+                end = text.rfind("}") + 1
+
             if start != -1 and end != -1:
                 data = json.loads(text[start:end])
                 return AnalysisResponse(
                     incident_id=incident.id,
                     root_cause=data.get("root_cause", "AI analysis completed."),
                     remediation_steps=data.get("remediation_steps", []),
-                    confidence_score=data.get("confidence_score", 0.9)
+                    confidence_score=data.get("confidence_score", 0.9),
+                    fix_suggestion=data.get("fix_suggestion")
                 )
         except Exception as e:
             print(f"Vertex AI analysis failed: {e}")
@@ -89,7 +112,53 @@ async def analyze_incident(incident: IncidentData):
             "Check recent deployment diffs.",
             "Run automated rollback if fallback persists."
         ],
-        confidence_score=0.8
+        confidence_score=0.8,
+        fix_suggestion="```python\n# Potential fix: increase pool size\nPOOL_SIZE = 20\n```"
+    )
+
+@app.post("/refactor", response_model=RefactorResponse)
+async def refactor_code(req: RefactorRequest):
+    if model:
+        try:
+            prompt = f"""
+            Refactor this code for {req.focus_area}. 
+            File Context: {req.file_path or "Unknown"}
+            
+            Code:
+            {req.code_context}
+            
+            Provide:
+            1. Refactored code (high performance, modern patterns)
+            2. Clear explanation of changes
+            3. Estimated impact
+            
+            Return ONLY JSON format:
+            {{
+                "refactored_code": "...",
+                "explanation": "...",
+                "estimated_impact": "..."
+            }}
+            """
+            response = model.generate_content(prompt)
+            text = response.text
+            start = text.find("{")
+            end = text.rfind("}") + 1
+            if start != -1 and end != -1:
+                data = json.loads(text[start:end])
+                return RefactorResponse(
+                    original_code=req.code_context,
+                    refactored_code=data.get("refactored_code", req.code_context),
+                    explanation=data.get("explanation", "Optimized code for efficiency."),
+                    estimated_impact=data.get("estimated_impact", "Medium")
+                )
+        except Exception as e:
+            print(f"Vertex AI refactor failed: {e}")
+
+    return RefactorResponse(
+        original_code=req.code_context,
+        refactored_code=f"// [Mock Refactor]\n{req.code_context}\n// Added caching and parallelization",
+        explanation="MOCK MODE: Simulated performance optimization and code cleanup.",
+        estimated_impact="High Performance Improvement"
     )
 
 @app.get("/health")

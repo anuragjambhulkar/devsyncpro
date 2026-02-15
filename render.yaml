@@ -1,7 +1,77 @@
 services:
+  # Backend Services
   - type: web
-    name: devsyncpro-ui-static
+    name: devsyncpro-repo-scanner
+    runtime: docker
+    plan: free
+    dockerFilePath: backend/repo-scanner/Dockerfile
+    envVars:
+      - key: PORT
+        value: 8081
+      - key: GOOGLE_CLOUD_PROJECT
+        sync: false
+      - key: PUBSUB_TOPIC_SCAN
+        value: scan-events
+
+  - type: web
+    name: devsyncpro-orchestrator
+    runtime: docker
+    plan: free
+    dockerFilePath: backend/orchestrator/Dockerfile
+    envVars:
+      - key: PORT
+        value: 8082
+      - key: GOOGLE_CLOUD_PROJECT
+        sync: false
+      - key: PUBSUB_TOPIC_OPERATIONS
+        value: operation-events
+
+  - type: web
+    name: devsyncpro-ai-analyzer
+    runtime: docker
+    plan: free
+    dockerFilePath: backend/ai-analyzer/Dockerfile
+    envVars:
+      - key: PORT
+        value: 8083
+      - key: GOOGLE_CLOUD_PROJECT
+        sync: false
+
+  - type: web
+    name: devsyncpro-relay
+    runtime: docker
+    plan: free
+    dockerFilePath: websocket-server/Dockerfile
+    envVars:
+      - key: PORT
+        value: 9000
+
+  # Frontend Static Site
+  - type: web
+    name: devsyncpro-ui
     runtime: static
     rootDir: frontend/devsyncpro-ui
     buildCommand: npm install && npm run build
     staticPublishPath: build
+    envVars:
+      - key: REACT_APP_ORCHESTRATOR_API
+        fromService:
+          name: devsyncpro-orchestrator
+          type: web
+          property: host
+      - key: REACT_APP_SCANNER_API
+        fromService:
+          name: devsyncpro-repo-scanner
+          type: web
+          property: host
+      - key: REACT_APP_ANALYZER_API
+        fromService:
+          name: devsyncpro-ai-analyzer
+          type: web
+          property: host
+      - key: REACT_APP_WS_URL
+        fromService:
+          name: devsyncpro-relay
+          type: web
+          property: host
+

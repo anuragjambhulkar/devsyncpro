@@ -16,7 +16,7 @@ export const IncidentDashboard: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
-  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [actionMsg, setActionMsg] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const [diag, setDiag] = useState<{ ids: number[], text: string } | null>(null);
   const [filter, setFilter] = useState<"all" | "active" | "resolved">("all");
 
@@ -26,13 +26,10 @@ export const IncidentDashboard: React.FC = () => {
     ws.onmessage = evt => {
       try {
         const payload = JSON.parse(evt.data);
-        // Only add if it's an incident (incidents have an 'id' and 'type' usually)
         if (payload && payload.id && payload.service) {
           setIncidents(curr => [payload as Incident, ...curr]);
         }
-      } catch (e) {
-        console.error("WS parse error:", e);
-      }
+      } catch (e) { console.error("WS error:", e); }
     };
     return () => ws.close();
   }, []);
@@ -52,58 +49,34 @@ export const IncidentDashboard: React.FC = () => {
   function toggleSelect(id: number) {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }
-  function toggleSelectAll(ev: React.ChangeEvent<HTMLInputElement>) {
-    if (ev.target.checked)
-      setSelectedIds(filtered.map(i => i.id));
-    else
-      setSelectedIds([]);
-  }
+
   function bulkResolve() {
     selectedIds.forEach(id => resolveIncident(id, false));
-    setActionMsg("Resolving selected incidents...");
+    setActionMsg({ text: "Applying resolution sequences...", type: 'success' });
     setTimeout(fetchIncidents, 700);
     setSelectedIds([]);
   }
-  function bulkDiagnose() {
-    setActionMsg("Analyzing with AI...");
-    Promise.all(selectedIds.map(id => {
-      const inc = incidents.find(i => i.id === id);
-      return fetch(`${CONFIG.ANALYZER_API}/analyze`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id,
-          type: inc?.type || "unknown",
-          service: inc?.service || "unknown",
-          message: inc?.message || ""
-        })
-      }).then(r => r.json().then(d => ({ id, fix: d.root_cause || "No suggestion" })))
-    })).then(results => {
+
+  async function bulkDiagnose() {
+    setActionMsg({ text: "AI Neural Analysis in progress...", type: 'success' });
+    try {
+      const results = await Promise.all(selectedIds.map(id => {
+        const inc = incidents.find(i => i.id === id);
+        return fetch(`${CONFIG.ANALYZER_API}/analyze`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id, type: inc?.type || "unknown", service: inc?.service || "unknown", message: inc?.message || ""
+          })
+        }).then(r => r.json().then(d => ({ id, fix: d.root_cause || "No suggestion" })))
+      }));
       setDiag({
         ids: results.map(r => r.id),
         text: results.map(r => `[ID ${r.id}] ${r.fix}`).join("\n")
       });
       setActionMsg(null);
-    }).catch(() => {
-      setDiag({ ids: selectedIds, text: "AI Analysis failed. Is the analyzer service running?" });
-      setActionMsg(null);
-    });
-  }
-  function exportSelectedCSV() {
-    const headers = ['id', 'type', 'service', 'status', 'severity', 'message', 'timestamp'];
-    const sel = incidents.filter(i => selectedIds.includes(i.id));
-    const rows = sel.map(i =>
-      [String(i.id), i.type, i.service, i.status, i.severity || "", i.message, new Date(i.timestamp).toLocaleString()]);
-    const csvRows = [headers, ...rows];
-    let csv = csvRows
-      .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "incidents-selected.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    } catch {
+      setActionMsg({ text: "AI analysis failed. Neural link timeout.", type: 'error' });
+    }
   }
 
   function resolveIncident(id: number, refresh = true) {
@@ -111,144 +84,119 @@ export const IncidentDashboard: React.FC = () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
-    })
-      .then(() => {
-        setActionMsg("Incident resolved!");
-        if (refresh) fetchIncidents();
-        setTimeout(() => setActionMsg(null), 1500);
-      })
-      .catch(() => {
-        setActionMsg("Error resolving incident!");
-        setTimeout(() => setActionMsg(null), 1500);
-      });
+    }).then(() => {
+      if (refresh) fetchIncidents();
+    });
   }
 
   const filtered = filter === "all" ? incidents : incidents.filter(i => i.status === filter);
 
+  const statusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      active: 'var(--warning)',
+      resolved: 'var(--success)',
+      critical: 'var(--error)'
+    };
+    return (
+      <span style={{
+        padding: '2px 10px',
+        borderRadius: '6px',
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        background: `rgba(255,255,255,0.05)`,
+        color: colors[status] || 'var(--text-dim)',
+        border: `1px solid ${colors[status] || 'var(--text-dim)'}`
+      }}>
+        {status}
+      </span>
+    );
+  };
+
   return (
-    <div style={{ padding: "2em" }}>
-      <h2 style={{ color: "#ffe397" }}>Live Incident Dashboard</h2>
-      <div style={{ marginBottom: 10 }}>
-        <button disabled={!selectedIds.length} onClick={bulkResolve}>Bulk Resolve</button>
-        <button disabled={!selectedIds.length} onClick={bulkDiagnose} style={{ marginLeft: 8 }}>Bulk Diagnose</button>
-        <button disabled={!selectedIds.length} onClick={exportSelectedCSV} style={{ marginLeft: 8 }}>Export Selected CSV</button>
-        <span style={{ marginLeft: 16, color: "#eee" }}>
-          {selectedIds.length ? `${selectedIds.length} selected` : ""}
-        </span>
+    <div className="animate-fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <h3 style={{ color: 'var(--primary)', margin: 0 }} className="glow-text">Incident Command Control</h3>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button disabled={!selectedIds.length} onClick={bulkResolve} style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--success)', color: '#000', fontWeight: 600 }}>Bulk Resolve</button>
+          <button disabled={!selectedIds.length} onClick={bulkDiagnose} style={{ padding: '8px 16px', borderRadius: '8px', background: 'var(--primary)', color: '#000', fontWeight: 600 }}>Bulk AI Diagnose</button>
+        </div>
       </div>
-      <div style={{ display: "inline-block", marginBottom: 10 }}>
-        <label>Status filter: </label>
-        <select value={filter} onChange={e => setFilter(e.target.value as any)}>
-          <option value="all">All</option>
-          <option value="active">Active</option>
+
+      <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <span style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>Telemetry Filter:</span>
+        <select
+          value={filter}
+          onChange={e => setFilter(e.target.value as any)}
+          style={{
+            background: 'var(--bg-slate)',
+            color: '#fff',
+            border: '1px solid var(--glass-border)',
+            padding: '6px 12px',
+            borderRadius: '8px',
+            outline: 'none'
+          }}
+        >
+          <option value="all">All Events</option>
+          <option value="active">Active Anomaly</option>
           <option value="resolved">Resolved</option>
         </select>
+        {actionMsg && (
+          <span style={{ color: actionMsg.type === 'success' ? 'var(--success)' : 'var(--error)', fontSize: '0.85rem' }}>
+            &bull; {actionMsg.text}
+          </span>
+        )}
       </div>
-      {actionMsg &&
-        <div style={{
-          background: "#23242b", color: actionMsg.includes("Error") ? "#e55" : "#5e5",
-          padding: "6px 18px", borderRadius: 6, marginBottom: 10, display: "inline-block"
-        }}>{actionMsg}</div>
-      }
-      {diag &&
-        <div style={{
-          background: "#1e2233", color: "#ffea90", padding: 16, margin: "8px 0",
-          borderRadius: 8, maxWidth: 440, whiteSpace: "pre-wrap"
-        }}>
-          <b>Bulk Suggestion:</b>
-          <br />{diag.text}
-          <button style={{ float: "right" }} onClick={() => setDiag(null)}>✕</button>
+
+      {diag && (
+        <div className="glass-panel animate-fade-in" style={{ padding: '20px', marginBottom: '24px', border: '1px solid var(--primary)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <strong style={{ color: 'var(--primary)' }}>Neural Diagnostics:</strong>
+            <button onClick={() => setDiag(null)} style={{ background: 'none', border: 'none', color: 'var(--text-dim)' }}>✕</button>
+          </div>
+          <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.9rem', color: 'var(--text-main)' }}>{diag.text}</div>
         </div>
-      }
-      <table style={{
-        color: "#fff", width: "100%", background: "#23242b",
-        borderRadius: "10px", marginTop: "1em"
-      }}>
-        <thead>
-          <tr>
-            <th>
-              <input
-                type="checkbox"
-                checked={selectedIds.length === filtered.length && filtered.length > 0}
-                onChange={toggleSelectAll}
-                style={{ marginRight: 6 }}
-              />
-            </th>
-            <th>ID</th>
-            <th>Type</th>
-            <th>Service</th>
-            <th>Status</th>
-            <th>Severity</th>
-            <th>Message</th>
-            <th>Time</th>
-            <th>War Room</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading && (
-            <tr key="loading"><td colSpan={9} style={{ textAlign: "center", color: "#aaa" }}>Loading incidents...</td></tr>
-          )}
-          {filtered.length === 0 && !loading && (
-            <tr key="empty">
-              <td colSpan={9} style={{ textAlign: "center", color: "#aaa" }}>No incidents yet.</td>
+      )}
+
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
+          <thead>
+            <tr style={{ color: 'var(--text-dim)', fontSize: '0.8rem', textTransform: 'uppercase' }}>
+              <th style={{ padding: '12px', textAlign: 'left' }}><input type="checkbox" checked={selectedIds.length === filtered.length && filtered.length > 0} onChange={e => setSelectedIds(e.target.checked ? filtered.map(i => i.id) : [])} /></th>
+              <th style={{ padding: '12px', textAlign: 'left' }}>Origin</th>
+              <th style={{ padding: '12px', textAlign: 'left' }}>Status</th>
+              <th style={{ padding: '12px', textAlign: 'left' }}>Severity</th>
+              <th style={{ padding: '12px', textAlign: 'left' }}>Diagnostic Message</th>
+              <th style={{ padding: '12px', textAlign: 'left' }}>War Room</th>
             </tr>
-          )}
-          {filtered.map(inc => (
-            <tr key={inc.id} style={{
-              background:
-                inc.status === "resolved"
-                  ? "#183441"
-                  : inc.status === "active"
-                    ? "#392b1c"
-                    : "#2c2323"
-            }}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(inc.id)}
-                  onChange={() => toggleSelect(inc.id)}
-                />
-              </td>
-              <td>{inc.id}</td>
-              <td>{inc.type}</td>
-              <td>{inc.service}</td>
-              <td style={{
-                color: inc.status === "resolved" ? "#5e5" : inc.status === "active" ? "#ffe397" : "#e55"
-              }}>{inc.status}</td>
-              <td style={{
-                color:
-                  inc.severity === "critical"
-                    ? "#ff3737"
-                    : inc.severity === "major"
-                      ? "#ffa500"
-                      : "#46D7B7",
-                fontWeight: inc.severity === "critical" ? "bold" : undefined
-              }}>{inc.severity || ""}</td>
-              <td>{inc.message}</td>
-              <td>{new Date(inc.timestamp).toLocaleTimeString()}</td>
-              <td>
-                {(inc.severity === "critical" && inc.warRoomUrl) ? (
-                  <a href={inc.warRoomUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      color: "#00c6ff",
-                      fontWeight: "bold",
-                      background: "#1a257b",
-                      padding: "3px 8px",
-                      borderRadius: 4,
-                      textDecoration: "none"
-                    }}>
-                    Join War Room
-                  </a>
-                ) : (
-                  "-"
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filtered.map(inc => (
+              <tr key={inc.id} style={{ background: 'rgba(255,255,255,0.03)', transition: 'background 0.2s' }} className="table-row-hover">
+                <td style={{ padding: '16px', borderRadius: '12px 0 0 12px' }}>
+                  <input type="checkbox" checked={selectedIds.includes(inc.id)} onChange={() => toggleSelect(inc.id)} />
+                </td>
+                <td style={{ padding: '16px' }}>
+                  <div style={{ fontWeight: 600 }}>{inc.service}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{inc.type}</div>
+                </td>
+                <td style={{ padding: '16px' }}>{statusBadge(inc.status)}</td>
+                <td style={{ padding: '16px' }}>
+                  <span style={{ color: inc.severity === 'critical' ? 'var(--error)' : inc.severity === 'major' ? 'var(--warning)' : 'var(--text-main)' }}>
+                    {inc.severity || 'normal'}
+                  </span>
+                </td>
+                <td style={{ padding: '16px', fontSize: '0.9rem', maxWidth: '300px' }}>{inc.message}</td>
+                <td style={{ padding: '16px', borderRadius: '0 12px 12px 0' }}>
+                  {inc.severity === 'critical' && inc.warRoomUrl ? (
+                    <a href={inc.warRoomUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem' }}>Neural Link →</a>
+                  ) : "-"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
