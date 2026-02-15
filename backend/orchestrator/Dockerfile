@@ -5,7 +5,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY backend ./backend
-RUN go build -o orchestrator ./backend/orchestrator
+RUN CGO_ENABLED=0 go build -o orchestrator ./backend/orchestrator
 
 FROM alpine:3.18
 WORKDIR /root/

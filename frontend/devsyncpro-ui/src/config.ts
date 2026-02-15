@@ -13,7 +13,7 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
         const fullHost = window.location.hostname;
         const hostParts = fullHost.split(".")[0].split("-");
 
-        let prefix = "devsyncpro";
+        let prefix = "dsp";
         const uiIndex = hostParts.indexOf("ui");
         if (uiIndex > 0) {
             prefix = hostParts.slice(0, uiIndex).join("-");

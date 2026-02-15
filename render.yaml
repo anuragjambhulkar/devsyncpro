@@ -2,10 +2,10 @@
 services:
   # Backend Services
   - type: web
-    name: devsyncpro-scanner
-    runtime: docker
+    name: dsp-scanner
+    env: docker
     plan: free
-    dockerFilePath: backend/repo-scanner/Dockerfile
+    dockerfilePath: backend/repo-scanner/Dockerfile
     dockerContext: .
     envVars:
       - key: PORT
@@ -16,10 +16,10 @@ services:
         value: scan-events
 
   - type: web
-    name: devsyncpro-orchestrator
-    runtime: docker
+    name: dsp-orchestrator
+    env: docker
     plan: free
-    dockerFilePath: backend/orchestrator/Dockerfile
+    dockerfilePath: backend/orchestrator/Dockerfile
     dockerContext: .
     envVars:
       - key: PORT
@@ -35,10 +35,10 @@ services:
           property: url
 
   - type: web
-    name: devsyncpro-analyzer
-    runtime: docker
+    name: dsp-analyzer
+    env: docker
     plan: free
-    dockerFilePath: backend/ai-analyzer/Dockerfile
+    dockerfilePath: backend/ai-analyzer/Dockerfile
     dockerContext: .
     envVars:
       - key: PORT
@@ -47,10 +47,10 @@ services:
         sync: false
 
   - type: web
-    name: devsyncpro-relay
-    runtime: docker
+    name: dsp-relay
+    env: docker
     plan: free
-    dockerFilePath: websocket-server/Dockerfile
+    dockerfilePath: websocket-server/Dockerfile
     dockerContext: .
     envVars:
       - key: PORT
@@ -66,22 +66,22 @@ services:
     envVars:
       - key: REACT_APP_ORCHESTRATOR_API
         fromService:
-          name: devsyncpro-orchestrator
+          name: dsp-orchestrator
           type: web
           property: url
       - key: REACT_APP_SCANNER_API
         fromService:
-          name: devsyncpro-scanner
+          name: dsp-scanner
           type: web
           property: url
       - key: REACT_APP_ANALYZER_API
         fromService:
-          name: devsyncpro-analyzer
+          name: dsp-analyzer
           type: web
           property: url
       - key: REACT_APP_WS_URL
         fromService:
-          name: devsyncpro-relay
+          name: dsp-relay
           type: web
           property: url
 
