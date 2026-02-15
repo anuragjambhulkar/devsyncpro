@@ -13,21 +13,19 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
         const fullHost = window.location.hostname;
         const hostParts = fullHost.split(".")[0].split("-");
 
-        // Strategy: Find the 'project prefix' by identifying the part before '-ui' or using the first part
         let prefix = "devsyncpro";
         const uiIndex = hostParts.indexOf("ui");
         if (uiIndex > 0) {
             prefix = hostParts.slice(0, uiIndex).join("-");
         }
 
-        // Possible patterns:
-        // 1. [prefix]-[service].onrender.com (Standard)
-        // 2. [prefix]-static-[service].onrender.com (Observed in logs)
-        // 3. [service].onrender.com (Direct)
+        // Discovery Order: 
+        // 1. [prefix]-[service].onrender.com (Blueprint default)
+        // 2. [prefix]-3.onrender.com (Observed in screenshot as a Docker service)
+        // 3. [prefix].onrender.com (Direct name)
 
-        // We favor [prefix]-[service] as it's the most common blueprint behavior
-        const url = `https://${prefix}-${serviceName}.onrender.com`.replace("--", "-");
-        return url.endsWith("/") ? url.slice(0, -1) : url;
+        console.log(`CONFIG_DISCOVERY: Service [${serviceName}] searching for prefix [${prefix}]`);
+        return `https://${prefix}-${serviceName}.onrender.com`.replace("--", "-");
     }
     return `http://localhost:${defaultPort}`;
 };
