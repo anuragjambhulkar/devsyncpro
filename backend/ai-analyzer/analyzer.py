@@ -1,4 +1,6 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
 from pydantic import BaseModel
 from typing import List, Optional
 import datetime
@@ -14,6 +16,15 @@ except ImportError:
     print("Pre-requisite 'google-cloud-aiplatform' not found. AI Analyzer starting in MOCK mode.")
 
 app = FastAPI(title="DevSyncPro AI Analyzer")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # --- Vertex AI Config ---
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")

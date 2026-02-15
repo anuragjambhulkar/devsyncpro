@@ -106,9 +106,13 @@ var (
 	incidentCount int
 )
 
-const relayURL = "http://localhost:9000/relay"
+var relayURL = os.Getenv("RELAY_URL")
 
 func broadcastToRelay(payload interface{}) {
+	if relayURL == "" {
+		relayURL = "http://localhost:9000/relay"
+	}
+
 	data, _ := json.Marshal(payload)
 	resp, err := http.Post(relayURL, "application/json", bytes.NewBuffer(data))
 	if err != nil {

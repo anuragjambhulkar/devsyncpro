@@ -25,6 +25,12 @@ services:
         sync: false
       - key: PUBSUB_TOPIC_OPERATIONS
         value: operation-events
+      - key: RELAY_URL
+        fromService:
+          name: devsyncpro-relay
+          type: web
+          property: url
+
 
   - type: web
     name: devsyncpro-ai-analyzer
@@ -58,20 +64,21 @@ services:
         fromService:
           name: devsyncpro-orchestrator
           type: web
-          property: host
+          property: url
       - key: REACT_APP_SCANNER_API
         fromService:
           name: devsyncpro-repo-scanner
           type: web
-          property: host
+          property: url
       - key: REACT_APP_ANALYZER_API
         fromService:
           name: devsyncpro-ai-analyzer
           type: web
-          property: host
+          property: url
       - key: REACT_APP_WS_URL
         fromService:
           name: devsyncpro-relay
           type: web
-          property: host
+          property: url
+
 
