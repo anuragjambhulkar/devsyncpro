@@ -38,7 +38,6 @@ export const CONFIG = {
     WS_URL: `${wsProtocol}//${getRenderUrl("relay", 10000).replace("https://", "").replace("http://", "")}/ws`
 };
 
-Broadway
 
 
 
