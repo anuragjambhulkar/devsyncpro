@@ -41,7 +41,8 @@ export const CONFIG = {
 if (isProd) {
     console.log("PRODUCTION CONFIG LOADED:", CONFIG);
 }
-Broadway
+}
+
 
 
 
