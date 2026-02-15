@@ -328,9 +328,10 @@ func withCORS(h http.HandlerFunc) http.HandlerFunc {
 			origin = "*"
 		}
 		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Origin, Accept")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -358,6 +359,10 @@ func main() {
 	}))
 	http.HandleFunc("/metrics", withCORS(handleMetrics))
 	http.HandleFunc("/payments/checkout", withCORS(handleCreateCheckoutSession))
+	http.HandleFunc("/health", withCORS(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "healthy", "service": "orchestrator"})
+	}))
 
 	port := os.Getenv("PORT")
 	if port == "" {
