@@ -1,7 +1,7 @@
 services:
   # Backend Services
   - type: web
-    name: scanner
+    name: devsyncpro-repo-scanner
     runtime: docker
     plan: free
     dockerFilePath: backend/repo-scanner/Dockerfile
@@ -14,7 +14,7 @@ services:
         value: scan-events
 
   - type: web
-    name: orchestrator
+    name: devsyncpro-orchestrator
     runtime: docker
     plan: free
     dockerFilePath: backend/orchestrator/Dockerfile
@@ -27,12 +27,12 @@ services:
         value: operation-events
       - key: RELAY_URL
         fromService:
-          name: relay
+          name: devsyncpro-relay
           type: web
           property: url
 
   - type: web
-    name: analyzer
+    name: devsyncpro-ai-analyzer
     runtime: docker
     plan: free
     dockerFilePath: backend/ai-analyzer/Dockerfile
@@ -43,7 +43,7 @@ services:
         sync: false
 
   - type: web
-    name: relay
+    name: devsyncpro-relay
     runtime: docker
     plan: free
     dockerFilePath: websocket-server/Dockerfile
@@ -53,7 +53,7 @@ services:
 
   # Frontend Static Site
   - type: web
-    name: ui
+    name: devsyncpro-ui
     runtime: static
     rootDir: frontend/devsyncpro-ui
     buildCommand: npm install && npm run build
@@ -61,24 +61,25 @@ services:
     envVars:
       - key: REACT_APP_ORCHESTRATOR_API
         fromService:
-          name: orchestrator
+          name: devsyncpro-orchestrator
           type: web
           property: url
       - key: REACT_APP_SCANNER_API
         fromService:
-          name: scanner
+          name: devsyncpro-repo-scanner
           type: web
           property: url
       - key: REACT_APP_ANALYZER_API
         fromService:
-          name: analyzer
+          name: devsyncpro-ai-analyzer
           type: web
           property: url
       - key: REACT_APP_WS_URL
         fromService:
-          name: relay
+          name: devsyncpro-relay
           type: web
           property: url
+
 
 
 
