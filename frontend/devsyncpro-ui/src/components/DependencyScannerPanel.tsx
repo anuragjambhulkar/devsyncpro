@@ -81,20 +81,42 @@ export const DependencyScannerPanel: React.FC = () => {
 
   async function fetchIncidents() {
     try {
-      const r = await fetch(`${CONFIG.ORCHESTRATOR_API}/incidents`);
+      const url = `${CONFIG.ORCHESTRATOR_API}/incidents`;
+      console.log("FETCH_DEBUG: Polling incidents from", url);
+      const r = await fetch(url);
+      if (!r.ok) {
+        console.warn(`Incidents endpoint returned ${r.status}`);
+        return;
+      }
       const data = await r.json();
       setIncidents(Array.isArray(data) ? data : []);
-    } catch (e) { console.error("Health poll failed", e); }
+      setError(null); // Clear error if it was a cold start issue
+    } catch (e) {
+      console.error("Incident poll failed:", e);
+    }
   }
 
-  async function fetchGraphOnce(): Promise<any | null> {
-    try {
-      const res = await fetch(`${API_BASE}/graph`, { method: "GET" });
-      if (!res.ok) return null;
-      const body = await res.json();
-      setLastRaw(body);
-      return body;
-    } catch (err) { return null; }
+  async function fetchGraphOnce(retries = 3): Promise<any | null> {
+    const url = `${API_BASE}/graph`;
+    console.log("FETCH_DEBUG: Polling graph from", url);
+    for (let i = 0; i < retries; i++) {
+      try {
+        const res = await fetch(url, { method: "GET" });
+        if (res.ok) {
+          const body = await res.json();
+          setLastRaw(body);
+          setError(null);
+          return body;
+        }
+        if (res.status === 404) {
+          console.warn(`Graph 404 (Attempt ${i + 1}/${retries}). Possible cold start.`);
+        }
+      } catch (err) {
+        console.error(`Graph fetch attempt ${i + 1} failed:`, err);
+      }
+      if (i < retries - 1) await new Promise(r => setTimeout(r, 2000));
+    }
+    return null;
   }
 
   async function scanRepo() {

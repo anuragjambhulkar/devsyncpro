@@ -26,7 +26,8 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
         // 3. [service].onrender.com (Direct)
 
         // We favor [prefix]-[service] as it's the most common blueprint behavior
-        return `https://${prefix}-${serviceName}.onrender.com`.replace("--", "-");
+        const url = `https://${prefix}-${serviceName}.onrender.com`.replace("--", "-");
+        return url.endsWith("/") ? url.slice(0, -1) : url;
     }
     return `http://localhost:${defaultPort}`;
 };
