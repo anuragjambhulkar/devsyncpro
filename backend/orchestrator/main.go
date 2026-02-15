@@ -342,8 +342,9 @@ func withCORS(h http.Handler) http.Handler {
 	})
 }
 func rootHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("ROOT_HIT: %s from %s", r.URL.Path, r.RemoteAddr)
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "DevSyncPro Orchestrator Live")
+	fmt.Fprintf(w, "DevSyncPro Orchestrator Live - OK")
 }
 
 func main() {

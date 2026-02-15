@@ -190,7 +190,7 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 		if err := db.Create(&scanRec).Error; err != nil {
 			log.Printf("Failed to save scan to DB: %v", err)
 		} else {
-			log.Printf("Saved scan ID %d to DB", scanRec.ID)
+			log.Printf("Saved scan ID %d to DB", scanRec.Model.ID)
 		}
 	} else {
 		log.Println("DB not connected, skipping persistence (data will be lost 😢)")
@@ -261,8 +261,9 @@ func withCORS(h http.Handler) http.Handler {
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("ROOT_HIT: %s from %s", r.URL.Path, r.RemoteAddr)
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "DevSyncPro Repo Scanner Live")
+	fmt.Fprintf(w, "DevSyncPro Repo Scanner Live - OK")
 }
 
 func main() {
