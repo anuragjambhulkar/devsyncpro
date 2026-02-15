@@ -14,18 +14,12 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
     if (window.location.hostname.includes("onrender.com")) {
         const hostName = window.location.hostname.split(".")[0];
 
-        // Extract the core system prefix (e.g., 'devsyncpro' from 'devsyncpro-ui-static')
-        const systemBase = hostName.split("-ui")[0];
-        const isStaticSuffix = hostName.includes("-static");
+        // Strategy: Detect project prefix by stripping UI suffixes
+        // Example: 'devsyncpro-ui-static' -> 'devsyncpro'
+        const systemBase = hostName.split("-ui")[0].replace("-static", "");
 
-        // Try to match the naming pattern observed in user's environment:
-        // UI: [System]-ui-static
-        // Backend: [System]-static-[Service]
-        if (isStaticSuffix && !systemBase.includes("-static")) {
-            return `https://${systemBase}-static-${serviceName}.onrender.com`.replace("--", "-");
-        }
-
-        // Fallback Pattern: [System]-[Service]
+        // Expected URL: https://[systemBase]-[serviceName].onrender.com
+        // We avoid adding '-static' to the service name as it's almost always wrong for backends
         return `https://${systemBase}-${serviceName}.onrender.com`.replace("--", "-");
     }
     return `http://localhost:${defaultPort}`;
@@ -35,8 +29,9 @@ export const CONFIG = {
     SCANNER_API: getRenderUrl("repo-scanner", 8081),
     ORCHESTRATOR_API: getRenderUrl("orchestrator", 8082),
     ANALYZER_API: getRenderUrl("ai-analyzer", 8083),
-    WS_URL: process.env.REACT_APP_WS_URL || `${wsProtocol}//${getRenderUrl("relay", 9000).replace("https://", "").replace("http://", "")}/ws`
+    WS_URL: `${wsProtocol}//${getRenderUrl("relay", 9000).replace("https://", "").replace("http://", "")}/ws`
 };
+
 
 
 
