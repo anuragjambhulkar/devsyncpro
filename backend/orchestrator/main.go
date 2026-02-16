@@ -29,7 +29,9 @@ func initGCP() {
 		log.Println("GOOGLE_CLOUD_PROJECT not set, skipping GCP init")
 		return
 	}
-	ctx := context.Background()
+	// Use a timeout to prevent hanging on startup
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	// Init Pub/Sub
 	if topicID != "" {
@@ -38,7 +40,7 @@ func initGCP() {
 			pubsubClient = ps
 			log.Printf("Pub/Sub initialized for topic %s", topicID)
 		} else {
-			log.Printf("Failed to init Pub/Sub: %v", err)
+			log.Printf("Failed to init Pub/Sub (likely timeout): %v", err)
 		}
 	}
 
@@ -49,7 +51,7 @@ func initGCP() {
 			bqClient = bq
 			log.Printf("BigQuery initialized for dataset %s", datasetID)
 		} else {
-			log.Printf("Failed to init BigQuery: %v", err)
+			log.Printf("Failed to init BigQuery (likely timeout): %v", err)
 		}
 	}
 }

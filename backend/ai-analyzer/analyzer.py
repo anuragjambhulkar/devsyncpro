@@ -19,7 +19,7 @@ app = FastAPI(title="DevSyncPro AI Analyzer")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex="https://.*\\.onrender\\.com",
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
