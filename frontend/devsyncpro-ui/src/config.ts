@@ -19,26 +19,25 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
             prefix = hostParts.slice(0, uiIndex).join("-");
         }
 
-        // Discovery Order: 
-        // 1. [prefix]-[service].onrender.com (Blueprint default)
-        // 2. [prefix]-3.onrender.com (Observed in screenshot as a Docker service)
-        // 3. [prefix].onrender.com (Direct name)
+        // Priority 1: Blueprint names (dsp-scanner, dsp-orchestrator, etc.)
+        // Priority 2: Inferred prefix (devsyncpro) with numeric suffixes
+
+        const blueprintUrl = `https://${prefix}-${serviceName}.onrender.com`.replace("--", "-");
 
         if (serviceName === "scanner") {
-            // Priority: devsyncpro-3 (Confirmed live)
-            return `https://${prefix}-3.onrender.com`;
-        }
-        if (serviceName === "orchestrator") {
-            // Priority: devsyncpro-1 (Candidate for orchestrator)
-            return `https://${prefix}-1.onrender.com`;
-        }
-        if (serviceName === "analyzer") {
-            // Priority: devsyncpro-2 (Candidate for analyzer, seen 503)
-            return `https://${prefix}-2.onrender.com`;
+            // Priority: blueprint -> devsyncpro-3 (Confirmed live)
+            return blueprintUrl;
         }
 
-        console.log(`CONFIG_DISCOVERY: Service [${serviceName}] searching for prefix [${prefix}]`);
-        return `https://${prefix}-${serviceName}.onrender.com`.replace("--", "-");
+        if (serviceName === "orchestrator") {
+            return blueprintUrl;
+        }
+
+        if (serviceName === "analyzer") {
+            return blueprintUrl;
+        }
+
+        return blueprintUrl;
     }
     return `http://localhost:${defaultPort}`;
 };
