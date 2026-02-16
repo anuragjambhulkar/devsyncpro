@@ -17,8 +17,8 @@ if [ -n "$SERVICE_TYPE" ]; then
 fi
 
 # Priority 2: Auto-detect based on Render name
-if echo "$SERVICE_NAME_LOWER" | grep -q "orchestrator"; then
-    echo "LAUNCHER: Detected orchestrator from name. Starting Orchestrator..."
+if echo "$SERVICE_NAME_LOWER" | grep -q "orchestrator" || echo "$SERVICE_NAME_LOWER" | grep -q "devsyncpro-1"; then
+    echo "LAUNCHER: Detected orchestrator/1 from name. Starting Orchestrator..."
     exec ./orchestrator
 elif echo "$SERVICE_NAME_LOWER" | grep -q "scanner" || echo "$SERVICE_NAME_LOWER" | grep -q "devsyncpro-3"; then
     echo "LAUNCHER: Detected scanner/3 from name. Starting Scanner..."
