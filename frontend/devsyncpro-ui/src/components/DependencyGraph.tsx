@@ -48,6 +48,8 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
 
     const width = 1000;
     const height = 600;
+    const minR = 16;
+    const maxR = 40;
 
     d3.select(".graph-tooltip").remove();
     const tooltip = d3
