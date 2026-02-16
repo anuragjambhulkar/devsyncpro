@@ -1,8 +1,8 @@
 FROM node:20-alpine
 WORKDIR /app
-# Context will be set to websocket-server in render.yaml
-COPY package*.json ./
+# Context set to root in render.yaml
+COPY websocket-server/package*.json ./
 RUN npm install
-COPY . .
+COPY websocket-server/ .
 EXPOSE 10000
 CMD ["node", "server.js"]

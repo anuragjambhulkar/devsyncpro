@@ -1,12 +1,12 @@
-# Render Blueprint for DevSyncPro - Trigger Deploy v4.3
+# Render Blueprint for DevSyncPro - Trigger Deploy v4.5 (PROD STABILIZATION)
 services:
   # Backend Services
   - type: web
-    name: devsyncpro-3
+    name: dsp-prod-scanner
     runtime: docker
     plan: free
     dockerContext: .
-    dockerfilePath: Dockerfile
+    dockerfilePath: backend/repo-scanner/Dockerfile
     envVars:
       - key: PORT
         value: 10000
@@ -18,11 +18,11 @@ services:
         value: scan-events
 
   - type: web
-    name: devsyncpro-1
+    name: dsp-prod-orchestrator
     runtime: docker
     plan: free
     dockerContext: .
-    dockerfilePath: Dockerfile
+    dockerfilePath: backend/orchestrator/Dockerfile
     envVars:
       - key: PORT
         value: 10000
@@ -34,12 +34,12 @@ services:
         value: operation-events
       - key: RELAY_URL
         fromService:
-          name: dsp-relay
+          name: dsp-prod-relay
           type: web
           property: host
 
   - type: web
-    name: devsyncpro-2
+    name: dsp-prod-analyzer
     runtime: docker
     plan: free
     dockerContext: .
@@ -51,7 +51,7 @@ services:
         sync: false
 
   - type: web
-    name: dsp-relay
+    name: dsp-prod-relay
     runtime: docker
     plan: free
     dockerContext: .
@@ -62,39 +62,17 @@ services:
 
   # Frontend Static Site
   - type: web
-    name: devsyncpro-ui-static
+    name: dsp-prod-ui
     runtime: static
     rootDir: frontend/devsyncpro-ui
     buildCommand: npm install && CI=false npm run build
     staticPublishPath: build
     envVars:
       - key: REACT_APP_ORCHESTRATOR_API
-        fromService:
-          name: devsyncpro-1
-          type: web
-          property: host
+        value: "" # Handled by config.ts discovery fallback
       - key: REACT_APP_SCANNER_API
-        fromService:
-          name: devsyncpro-3
-          type: web
-          property: host
+        value: "" # Handled by config.ts discovery fallback
       - key: REACT_APP_ANALYZER_API
-        fromService:
-          name: devsyncpro-2
-          type: web
-          property: host
+        value: "" # Handled by config.ts discovery fallback
       - key: REACT_APP_WS_URL
-        fromService:
-          name: dsp-relay
-          type: web
-          property: host
-
-
-
-
-
-
-
-
-
-
+        value: "" # Handled by config.ts discovery fallback

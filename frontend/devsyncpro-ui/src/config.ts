@@ -16,12 +16,20 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
     if (window.location.hostname.includes("onrender.com")) {
         const fullHost = window.location.hostname;
         // If we're on the UI, try to find the backend relative to the common prefix
-        const base = fullHost.split(".")[0].replace("-ui-static", "").replace("-ui", "");
+        const base = "dsp-prod"; // Force consistent prefix matching
 
         if (serviceName === "scanner") {
-            return `https://${base}-3.onrender.com`; // Known livedevsyncpro-3
+            return `https://${base}-scanner.onrender.com`;
         }
-        return `https://${base}-${serviceName}.onrender.com`.replace("--", "-");
+        if (serviceName === "orchestrator") {
+            return `https://${base}-orchestrator.onrender.com`;
+        }
+        if (serviceName === "analyzer") {
+            return `https://${base}-analyzer.onrender.com`;
+        }
+        if (serviceName === "relay") {
+            return `https://${base}-relay.onrender.com`;
+        }
     }
     return `http://localhost:${defaultPort}`;
 };
