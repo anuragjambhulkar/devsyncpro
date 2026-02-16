@@ -113,7 +113,17 @@ var (
 	incidentCount int
 )
 
-var relayURL = os.Getenv("RELAY_URL")
+var relayURL = func() string {
+	u := os.Getenv("RELAY_URL")
+	if u == "" {
+		return ""
+	}
+	// Support hostname-only from Render Blueprint 'host' property
+	if !bytes.HasPrefix([]byte(u), []byte("http")) {
+		return "https://" + u
+	}
+	return u
+}()
 
 func broadcastToRelay(payload interface{}) {
 	if relayURL == "" {
