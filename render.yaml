@@ -1,4 +1,4 @@
-# Render Blueprint for DevSyncPro - Trigger Deploy v3.6
+# Render Blueprint for DevSyncPro - Trigger Deploy v3.7
 services:
   # Backend Services
   - type: web
@@ -39,7 +39,7 @@ services:
           property: url
 
   - type: web
-    name: dsp-analyzer
+    name: devsyncpro-2
     runtime: docker
     plan: free
     dockerContext: .
