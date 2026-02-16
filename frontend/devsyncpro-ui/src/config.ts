@@ -9,34 +9,16 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
     const envVal = (process.env as any)[envKey];
     if (envVal) return envVal;
 
+    // Fallback logic for common Render naming patterns
     if (window.location.hostname.includes("onrender.com")) {
         const fullHost = window.location.hostname;
-        const hostParts = fullHost.split(".")[0].split("-");
-
-        let prefix = "dsp";
-        const uiIndex = hostParts.indexOf("ui");
-        if (uiIndex > 0) {
-            prefix = hostParts.slice(0, uiIndex).join("-");
-        }
-
-        // Render's auto-increment logic often results in numeric suffixes (-1, -3, etc.)
-        // We prioritize the blueprint format but fallback to observed live names.
+        // If we're on the UI, try to find the backend relative to the common prefix
+        const base = fullHost.split(".")[0].replace("-ui-static", "").replace("-ui", "");
 
         if (serviceName === "scanner") {
-            // Check for dsp-scanner or dsp-scanner-1
-            if (fullHost.includes("dsp-scanner") || fullHost.includes("-3")) return `https://${prefix}-scanner.onrender.com`.replace("--", "-");
-            return `https://${prefix}-3.onrender.com`;
+            return `https://${base}-3.onrender.com`; // Known livedevsyncpro-3
         }
-
-        if (serviceName === "orchestrator") {
-            return `https://${prefix}-orchestrator.onrender.com`.replace("--", "-");
-        }
-
-        if (serviceName === "analyzer") {
-            return `https://${prefix}-analyzer.onrender.com`.replace("--", "-");
-        }
-
-        return `https://${prefix}-${serviceName}.onrender.com`.replace("--", "-");
+        return `https://${base}-${serviceName}.onrender.com`.replace("--", "-");
     }
     return `http://localhost:${defaultPort}`;
 };
