@@ -17,6 +17,7 @@ WORKDIR /root/
 COPY --from=builder /app/scanner .
 COPY --from=builder /app/orchestrator .
 COPY --from=builder /app/launcher.sh .
+RUN chmod +x ./launcher.sh
 
 EXPOSE 10000
-ENTRYPOINT ["./launcher.sh"]
+ENTRYPOINT ["/bin/sh", "./launcher.sh"]
