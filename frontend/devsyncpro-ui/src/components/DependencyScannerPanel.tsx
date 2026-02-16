@@ -190,15 +190,18 @@ export const DependencyScannerPanel: React.FC = () => {
 
   const adj = asAdjacencyList(dependencyGraph.nodes, dependencyGraph.edges);
 
-  const healthMap: Record<string, string> = {};
-  incidents.forEach(inc => {
-    if (inc.status === "active") {
-      const current = healthMap[inc.service];
-      if (inc.severity === "critical") healthMap[inc.service] = "critical";
-      else if (inc.severity === "major" && current !== "critical") healthMap[inc.service] = "warning";
-      else if (!current) healthMap[inc.service] = "warning";
-    }
-  });
+  const healthMap = React.useMemo(() => {
+    const map: Record<string, string> = {};
+    incidents.forEach(inc => {
+      if (inc.status === "active") {
+        const current = map[inc.service];
+        if (inc.severity === "critical") map[inc.service] = "critical";
+        else if (inc.severity === "major" && current !== "critical") map[inc.service] = "warning";
+        else if (!current) map[inc.service] = "warning";
+      }
+    });
+    return map;
+  }, [incidents]);
 
   const handleAiFix = async () => {
     setRefacting(true);

@@ -1,8 +1,8 @@
-# Render Blueprint for DevSyncPro - Trigger Deploy v4.7 (FIXED UI & GO)
+# Render Blueprint for DevSyncPro - Trigger Deploy v5.0 (CLEAN SLATE)
 services:
   # Backend Services
   - type: web
-    name: dsp-prod-scanner
+    name: dsp-v5-scanner
     runtime: docker
     plan: free
     dockerContext: .
@@ -18,7 +18,7 @@ services:
         value: scan-events
 
   - type: web
-    name: dsp-prod-orchestrator
+    name: dsp-v5-orchestrator
     runtime: docker
     plan: free
     dockerContext: .
@@ -34,12 +34,12 @@ services:
         value: operation-events
       - key: RELAY_URL
         fromService:
-          name: dsp-prod-relay
+          name: dsp-v5-relay
           type: web
           property: host
 
   - type: web
-    name: dsp-prod-analyzer
+    name: dsp-v5-analyzer
     runtime: docker
     plan: free
     dockerContext: .
@@ -51,7 +51,7 @@ services:
         sync: false
 
   - type: web
-    name: dsp-prod-relay
+    name: dsp-v5-relay
     runtime: docker
     plan: free
     dockerContext: .
@@ -62,17 +62,17 @@ services:
 
   # Frontend Static Site
   - type: web
-    name: dsp-prod-ui
+    name: dsp-v5-ui
     runtime: static
     rootDir: frontend/devsyncpro-ui
     buildCommand: npm install && CI=false npm run build
     staticPublishPath: build
     envVars:
       - key: REACT_APP_ORCHESTRATOR_API
-        value: "" # Handled by config.ts discovery fallback
+        value: "" 
       - key: REACT_APP_SCANNER_API
-        value: "" # Handled by config.ts discovery fallback
+        value: "" 
       - key: REACT_APP_ANALYZER_API
-        value: "" # Handled by config.ts discovery fallback
+        value: "" 
       - key: REACT_APP_WS_URL
-        value: "" # Handled by config.ts discovery fallback
+        value: "" 

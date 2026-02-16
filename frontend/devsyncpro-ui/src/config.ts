@@ -13,10 +13,10 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
     }
 
     // Fallback logic for common Render naming patterns
-    if (window.location.hostname.includes("onrender.com") || window.location.hostname.includes("dsp-prod")) {
+    if (window.location.hostname.includes("onrender.com") || window.location.hostname.includes("dsp-v5")) {
         const fullHost = window.location.hostname;
         // If we're on the UI, try to find the backend relative to the common prefix
-        const base = "dsp-prod"; // Force consistent prefix matching
+        const base = "dsp-v5"; // Force consistent prefix matching
 
         if (serviceName === "scanner") {
             return `https://${base}-scanner.onrender.com`;

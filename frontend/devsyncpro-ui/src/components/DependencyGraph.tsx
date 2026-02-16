@@ -35,6 +35,9 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
   const allBlasts = Object.values(actualBlastRadius);
   const maxBlast = allBlasts.length ? Math.max(...allBlasts, 1) : 1;
 
+  const simulationRef = useRef<any>(null);
+
+  // Simulation Initialization (Only when graph structure changes)
   useEffect(() => {
     if (!graph || !svgRef.current) return;
 
@@ -45,8 +48,6 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
 
     const width = 1000;
     const height = 600;
-    const minR = 16;
-    const maxR = 40;
 
     d3.select(".graph-tooltip").remove();
     const tooltip = d3
@@ -90,8 +91,11 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
         return (minR + (maxR - minR) * (br / Math.max(1, maxBlast))) + 10;
       }));
 
+    simulationRef.current = simulation;
+
     // Glow Filter
-    const filter = svg.append("defs").append("filter")
+    const defs = svg.append("defs");
+    const filter = defs.append("filter")
       .attr("id", "glow")
       .attr("x", "-50%")
       .attr("y", "-50%")
@@ -119,22 +123,23 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
       .selectAll("g")
       .data(nodes)
       .enter()
-      .append("g");
+      .append("g")
+      .attr("class", "node-group");
 
     const dragBehavior = d3.drag<SVGGElement, any>()
       .on("start", (event: any, d: any) => {
-        if (!event.active) (simulation as any).alphaTarget(0.3).restart();
-        (d as any).fx = (d as any).x;
-        (d as any).fy = (d as any).y;
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
       })
       .on("drag", (event: any, d: any) => {
-        (d as any).fx = event.x;
-        (d as any).fy = event.y;
+        d.fx = event.x;
+        d.fy = event.y;
       })
       .on("end", (event: any, d: any) => {
-        if (!event.active) (simulation as any).alphaTarget(0);
-        (d as any).fx = null;
-        (d as any).fy = null;
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
       });
 
     (node as any).call(dragBehavior as any);
@@ -144,12 +149,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
         const br = actualBlastRadius[d.id] ?? 1;
         return minR + (maxR - minR) * (br / Math.max(1, maxBlast));
       })
-      .attr("fill", (d: any) => {
-        const status = healthMap[d.id] || "healthy";
-        if (status === "critical") return "var(--error)";
-        if (status === "warning") return "var(--warning)";
-        return "var(--primary)";
-      })
+      .attr("class", "node-circle")
       .attr("filter", "url(#glow)")
       .style("cursor", "pointer")
       .on("mouseover", function (event: any, d: any) {
@@ -188,19 +188,32 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
 
     simulation.on("tick", () => {
       link
-        .attr("x1", (d: any) => (d.source as any).x)
-        .attr("y1", (d: any) => (d.source as any).y)
-        .attr("x2", (d: any) => (d.target as any).x)
-        .attr("y2", (d: any) => (d.target as any).y);
+        .attr("x1", (d: any) => d.source.x)
+        .attr("y1", (d: any) => d.source.y)
+        .attr("x2", (d: any) => d.target.x)
+        .attr("y2", (d: any) => d.target.y);
 
       node.attr("transform", (d: any) => `translate(${d.x},${d.y})`);
     });
 
     return () => {
       tooltip.remove();
-      (simulation as any).stop();
+      simulation.stop();
     };
-  }, [graph, healthMap, actualBlastRadius, maxBlast]);
+  }, [graph]); // Only structural changes reset everything
+
+  // Health Color Update (Separate from simulation reset)
+  useEffect(() => {
+    if (!svgRef.current) return;
+    d3.select(svgRef.current).selectAll(".node-circle")
+      .transition().duration(500)
+      .attr("fill", (d: any) => {
+        const status = healthMap[d.id] || "healthy";
+        if (status === "critical") return "var(--error)";
+        if (status === "warning") return "var(--warning)";
+        return "var(--primary)";
+      });
+  }, [healthMap]);
 
   return (
     <div style={{ position: "relative" }}>
