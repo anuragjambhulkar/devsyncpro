@@ -160,43 +160,23 @@ export const IncidentDashboard: React.FC = () => {
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
-          <thead>
-            <tr style={{ color: 'var(--text-dim)', fontSize: '0.8rem', textTransform: 'uppercase' }}>
-              <th style={{ padding: '12px', textAlign: 'left' }}><input type="checkbox" checked={selectedIds.length === filtered.length && filtered.length > 0} onChange={e => setSelectedIds(e.target.checked ? filtered.map(i => i.id) : [])} /></th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Origin</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Status</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Severity</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>Diagnostic Message</th>
-              <th style={{ padding: '12px', textAlign: 'left' }}>War Room</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(inc => (
-              <tr key={inc.id} style={{ background: 'rgba(255,255,255,0.03)', transition: 'background 0.2s' }} className="table-row-hover">
-                <td style={{ padding: '16px', borderRadius: '12px 0 0 12px' }}>
-                  <input type="checkbox" checked={selectedIds.includes(inc.id)} onChange={() => toggleSelect(inc.id)} />
-                </td>
-                <td style={{ padding: '16px' }}>
-                  <div style={{ fontWeight: 600 }}>{inc.service}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{inc.type}</div>
-                </td>
-                <td style={{ padding: '16px' }}>{statusBadge(inc.status)}</td>
-                <td style={{ padding: '16px' }}>
-                  <span style={{ color: inc.severity === 'critical' ? 'var(--error)' : inc.severity === 'major' ? 'var(--warning)' : 'var(--text-main)' }}>
-                    {inc.severity || 'normal'}
-                  </span>
-                </td>
-                <td style={{ padding: '16px', fontSize: '0.9rem', maxWidth: '300px' }}>{inc.message}</td>
-                <td style={{ padding: '16px', borderRadius: '0 12px 12px 0' }}>
-                  {inc.severity === 'critical' && inc.warRoomUrl ? (
-                    <a href={inc.warRoomUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem' }}>Neural Link →</a>
-                  ) : "-"}
-                </td>
-              </tr>
+          <td style={{ padding: '16px' }}>{statusBadge(inc.status)}</td>
+          <td style={{ padding: '16px' }}>
+            <span style={{ color: inc.severity === 'critical' ? 'var(--error)' : inc.severity === 'major' ? 'var(--warning)' : 'var(--text-main)' }}>
+              {inc.severity || 'normal'}
+            </span>
+          </td>
+          <td style={{ padding: '16px', fontSize: '0.9rem', maxWidth: '300px' }}>{inc.message}</td>
+          <td style={{ padding: '16px', borderRadius: '0 12px 12px 0' }}>
+            {inc.severity === 'critical' && inc.warRoomUrl ? (
+              <a href={inc.warRoomUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem' }}>Neural Link →</a>
+            ) : "-"}
+          </td>
+        </tr>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+      </tbody>
+    </table>
+      </div >
+    </div >
   );
 };

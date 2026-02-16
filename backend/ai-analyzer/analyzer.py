@@ -23,7 +23,12 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+@app.get("/")
+async def root():
+    return {"status": "online", "service": "DevSyncPro AI Analyzer", "v": "2.0"}
 
 
 
@@ -179,5 +184,6 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
+    # Use 0.0.0.0 and the PORT env var for Render
     port = int(os.getenv("PORT", 10000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run("analyzer:app", host="0.0.0.0", port=port, reload=False)

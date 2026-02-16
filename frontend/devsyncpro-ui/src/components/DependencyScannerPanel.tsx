@@ -363,7 +363,7 @@ export const DependencyScannerPanel: React.FC = () => {
               </div>
             )}
 
-            <div className="glass-panel" style={{ padding: "20px" }}>
+            <div className="glass-panel card-glow" style={{ padding: "20px" }}>
               <DependencyGraph graph={adj} healthMap={healthMap as Record<string, "healthy" | "warning" | "critical">} />
             </div>
           </>
