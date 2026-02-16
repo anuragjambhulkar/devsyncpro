@@ -1,4 +1,4 @@
-# Render Blueprint for DevSyncPro - Trigger Deploy v3.4
+# Render Blueprint for DevSyncPro - Trigger Deploy v3.5
 services:
   # Backend Services
   - type: web
@@ -6,10 +6,12 @@ services:
     runtime: docker
     plan: free
     dockerContext: .
-    dockerfilePath: backend/repo-scanner/Dockerfile
+    dockerfilePath: Dockerfile
     envVars:
       - key: PORT
         value: 10000
+      - key: SERVICE_TYPE
+        value: scanner
       - key: GOOGLE_CLOUD_PROJECT
         sync: false
       - key: PUBSUB_TOPIC_SCAN
@@ -20,17 +22,19 @@ services:
     runtime: docker
     plan: free
     dockerContext: .
-    dockerfilePath: backend/orchestrator/Dockerfile
+    dockerfilePath: Dockerfile
     envVars:
       - key: PORT
         value: 10000
+      - key: SERVICE_TYPE
+        value: orchestrator
       - key: GOOGLE_CLOUD_PROJECT
         sync: false
       - key: PUBSUB_TOPIC_OPERATIONS
         value: operation-events
       - key: RELAY_URL
         fromService:
-          name: devsyncpro-relay
+          name: dsp-relay
           type: web
           property: url
 
