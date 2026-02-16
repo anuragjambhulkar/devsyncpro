@@ -23,12 +23,12 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
         // We prioritize the blueprint format but fallback to observed live names.
 
         if (serviceName === "scanner") {
-            // Priority: devsyncpro-3 (Confirmed live in dashboard)
+            // Check for dsp-scanner or dsp-scanner-1
+            if (fullHost.includes("dsp-scanner") || fullHost.includes("-3")) return `https://${prefix}-scanner.onrender.com`.replace("--", "-");
             return `https://${prefix}-3.onrender.com`;
         }
 
         if (serviceName === "orchestrator") {
-            // Priority: dsp-orchestrator -> devsyncpro-1 (Candidate)
             return `https://${prefix}-orchestrator.onrender.com`.replace("--", "-");
         }
 

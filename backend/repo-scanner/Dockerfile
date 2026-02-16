@@ -4,8 +4,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY backend ./backend
-# We need scanner.go too
+COPY . .
 RUN CGO_ENABLED=0 go build -o scanner ./backend/repo-scanner
 
 FROM alpine:3.18
