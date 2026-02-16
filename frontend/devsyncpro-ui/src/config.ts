@@ -19,25 +19,24 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
             prefix = hostParts.slice(0, uiIndex).join("-");
         }
 
-        // Priority 1: Blueprint names (dsp-scanner, dsp-orchestrator, etc.)
-        // Priority 2: Inferred prefix (devsyncpro) with numeric suffixes
-
-        const blueprintUrl = `https://${prefix}-${serviceName}.onrender.com`.replace("--", "-");
+        // Render's auto-increment logic often results in numeric suffixes (-1, -3, etc.)
+        // We prioritize the blueprint format but fallback to observed live names.
 
         if (serviceName === "scanner") {
-            // Priority: blueprint -> devsyncpro-3 (Confirmed live)
-            return blueprintUrl;
+            // Priority: devsyncpro-3 (Confirmed live in dashboard)
+            return `https://${prefix}-3.onrender.com`;
         }
 
         if (serviceName === "orchestrator") {
-            return blueprintUrl;
+            // Priority: dsp-orchestrator -> devsyncpro-1 (Candidate)
+            return `https://${prefix}-orchestrator.onrender.com`.replace("--", "-");
         }
 
         if (serviceName === "analyzer") {
-            return blueprintUrl;
+            return `https://${prefix}-analyzer.onrender.com`.replace("--", "-");
         }
 
-        return blueprintUrl;
+        return `https://${prefix}-${serviceName}.onrender.com`.replace("--", "-");
     }
     return `http://localhost:${defaultPort}`;
 };
