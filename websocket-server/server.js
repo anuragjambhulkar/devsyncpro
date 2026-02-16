@@ -15,6 +15,12 @@ const server = http.createServer((req, res) => {
   res.setHeader("Access-Control-Allow-Credentials", "true");
 
 
+  if (req.url === "/health") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "healthy", service: "relay", timestamp: new Date().toISOString() }));
+    return;
+  }
+
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
