@@ -160,22 +160,25 @@ export const IncidentDashboard: React.FC = () => {
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
-          <td style={{ padding: '16px' }}>{statusBadge(inc.status)}</td>
-          <td style={{ padding: '16px' }}>
-            <span style={{ color: inc.severity === 'critical' ? 'var(--error)' : inc.severity === 'major' ? 'var(--warning)' : 'var(--text-main)' }}>
-              {inc.severity || 'normal'}
-            </span>
-          </td>
-          <td style={{ padding: '16px', fontSize: '0.9rem', maxWidth: '300px' }}>{inc.message}</td>
-          <td style={{ padding: '16px', borderRadius: '0 12px 12px 0' }}>
-            {inc.severity === 'critical' && inc.warRoomUrl ? (
-              <a href={inc.warRoomUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem' }}>Neural Link →</a>
-            ) : "-"}
-          </td>
-        </tr>
+          <tbody>
+            {incidents.filter(inc => filter === 'all' || inc.status.toLowerCase() === filter).map(inc => (
+              <tr key={inc.id} className="glass-panel" style={{ marginBottom: '8px' }}>
+                <td style={{ padding: '16px', borderRadius: '12px 0 0 12px' }}>{statusBadge(inc.status)}</td>
+                <td style={{ padding: '16px' }}>
+                  <span style={{ color: inc.severity === 'critical' ? 'var(--error)' : inc.severity === 'major' ? 'var(--warning)' : 'var(--text-main)' }}>
+                    {inc.severity || 'normal'}
+                  </span>
+                </td>
+                <td style={{ padding: '16px', fontSize: '0.9rem', maxWidth: '300px' }}>{inc.message}</td>
+                <td style={{ padding: '16px', borderRadius: '0 12px 12px 0' }}>
+                  {inc.severity === 'critical' && inc.warRoomUrl ? (
+                    <a href={inc.warRoomUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem' }}>Neural Link →</a>
+                  ) : "-"}
+                </td>
+              </tr>
             ))}
-      </tbody>
-    </table>
+          </tbody>
+        </table>
       </div >
     </div >
   );

@@ -1,4 +1,4 @@
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 WORKDIR /app
 # We need go.mod from the root. Adjusting context to root in render.yaml
 COPY go.mod go.sum ./
