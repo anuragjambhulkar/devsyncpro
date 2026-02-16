@@ -1,4 +1,4 @@
-# Render Blueprint for DevSyncPro - Trigger Deploy v4.5 (PROD STABILIZATION)
+# Render Blueprint for DevSyncPro - Trigger Deploy v4.6 (PROD SYNC)
 services:
   # Backend Services
   - type: web
