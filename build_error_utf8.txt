@@ -1,0 +1,61 @@
+﻿go : github.com/anu
+ragjambhulkar/devsy
+ncpro-backend/backe
+nd/repo-scanner
+At line:1 char:1
++ go build -v ./bac
+kend/repo-scanner/ 
+> build_error.txt 
+2>&1
++ ~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+~~~
+    + CategoryInfo 
+             : No  
+  tSpecified: (g   
+ ithub.com/anur    
+...nd/repo-sca    
+nner:String) [    
+], RemoteExcep    
+tion
+    + FullyQualifi 
+   edErrorId : Na  
+  tiveCommandErr   
+ or
+ 
+# github.com/anurag
+jambhulkar/devsyncp
+ro-backend/backend/
+repo-scanner
+backend\repo-scanne
+r\main.go:47:12: 
+undefined: gorm
+backend\repo-scanne
+r\main.go:47:22: 
+undefined: postgres
+backend\repo-scanne
+r\main.go:47:43: 
+undefined: gorm
+backend\repo-scanne
+r\main.go:86:9: 
+undefined: gorm
+backend\repo-scanne
+r\main.go:89:2: 
+undefined: gorm
+backend\repo-scanne
+r\main.go:96:2: 
+undefined: gorm
+backend\repo-scanne
+r\main.go:103:2: 
+undefined: gorm
+backend\repo-scanne
+r\main.go:137:15: 
+undefined: 
+gitCloneToTemp
+backend\repo-scanne
+r\main.go:191:49: 
+scanRec.ID 
+undefined (type 
+Scan has no field 
+or method ID)

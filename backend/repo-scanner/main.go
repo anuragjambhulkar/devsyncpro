@@ -196,7 +196,7 @@ func scanHandler(w http.ResponseWriter, r *http.Request) {
 		if err := db.Create(&scanRec).Error; err != nil {
 			log.Printf("Failed to save scan to DB: %v", err)
 		} else {
-			log.Printf("Saved scan ID %d to DB", scanRec.Model.ID)
+			log.Printf("Saved scan ID %d to DB", scanRec.ID)
 		}
 	} else {
 		log.Println("DB not connected, skipping persistence (data will be lost 😢)")
