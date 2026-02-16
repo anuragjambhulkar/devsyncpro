@@ -7,7 +7,10 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
 
     const envKey = `REACT_APP_${serviceName.toUpperCase().replace(/-/g, "_")}_API`;
     const envVal = (process.env as any)[envKey];
-    if (envVal) return envVal;
+    if (envVal) {
+        // Render 'host' property doesn't include https:// prefix
+        return envVal.startsWith("http") ? envVal : `https://${envVal}`;
+    }
 
     // Fallback logic for common Render naming patterns
     if (window.location.hostname.includes("onrender.com")) {

@@ -1,4 +1,4 @@
-# Render Blueprint for DevSyncPro - Trigger Deploy v3.7
+# Render Blueprint for DevSyncPro - Trigger Deploy v3.8
 services:
   # Backend Services
   - type: web
@@ -70,24 +70,24 @@ services:
     envVars:
       - key: REACT_APP_ORCHESTRATOR_API
         fromService:
-          name: dsp-orchestrator
+          name: devsyncpro-1
           type: web
-          property: url
+          property: host
       - key: REACT_APP_SCANNER_API
         fromService:
-          name: dsp-scanner
+          name: devsyncpro-3
           type: web
-          property: url
+          property: host
       - key: REACT_APP_ANALYZER_API
         fromService:
-          name: dsp-analyzer
+          name: devsyncpro-2
           type: web
-          property: url
+          property: host
       - key: REACT_APP_WS_URL
         fromService:
           name: dsp-relay
           type: web
-          property: url
+          property: host
 
 
 
