@@ -114,15 +114,30 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
     feMerge.append("feMergeNode").attr("in", "coloredBlur");
     feMerge.append("feMergeNode").attr("in", "SourceGraphic");
 
+    // Arrowheads
+    defs.append("marker")
+      .attr("id", "arrowhead")
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 30) // Offset to sit on the edge of the circle
+      .attr("refY", 0)
+      .attr("orient", "auto")
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("xoverflow", "visible")
+      .append("svg:path")
+      .attr("d", "M 0,-5 L 10 ,0 L 0,5")
+      .attr("fill", "rgba(56, 189, 248, 0.4)")
+      .style("stroke", "none");
+
     const link = container
       .append("g")
       .selectAll("line")
       .data(links)
       .enter()
       .append("line")
-      .attr("stroke", "rgba(56, 189, 248, 0.2)")
+      .attr("stroke", "rgba(56, 189, 248, 0.3)")
       .attr("stroke-width", 2)
-      .attr("stroke-dasharray", "5,5");
+      .attr("marker-end", "url(#arrowhead)");
 
     const node = container
       .append("g")
