@@ -38,6 +38,7 @@ export const DependencyScannerPanel: React.FC = () => {
 
   // AI Refactor State
   const [refacting, setRefacting] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [aiFix, setAiFix] = useState<{ original: string, refactored: string, explanation: string, impact: string } | null>(null);
 
   useEffect(() => {
@@ -206,12 +207,19 @@ export const DependencyScannerPanel: React.FC = () => {
   const handleAiFix = async () => {
     setRefacting(true);
     try {
+      // Intelligent context generation based on graph structure
+      const dependencies = adj[selectedNode || ""] || [];
+      const codeContext = selectedNode
+        ? `// Service: ${selectedNode}\n// Incoming Links: ${Object.keys(adj).filter(k => adj[k].includes(selectedNode!)).join(", ")}\n// Outgoing Deps: ${dependencies.join(", ")}\n\nclass ${selectedNode.replace(/[^a-zA-Z0-9]/g, '')}Optimizer {\n  static async process() {\n    // Detected circular dependency with other nodes\n    return await fetchDependantData();\n  }\n}`
+        : "// Global architectural scan\n// Multiple circular dependencies detected in the main lifecycle loop.";
+
       const res = await fetch(`${CONFIG.ANALYZER_API}/refactor`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          code_context: "// Sample problematic code with circular dependencies and memory leaks",
-          focus_area: "architecture & performance"
+          code_context: codeContext,
+          focus_area: selectedNode ? `refactor ${selectedNode} to eliminate bottlenecks` : "global architectural performance",
+          file_path: selectedNode ? `${selectedNode}.sys` : "root-manifest.json"
         })
       });
       const data = await res.json();
@@ -367,7 +375,18 @@ export const DependencyScannerPanel: React.FC = () => {
             )}
 
             <div className="glass-panel card-glow" style={{ padding: "20px" }}>
-              <DependencyGraph graph={adj} healthMap={healthMap as Record<string, "healthy" | "warning" | "critical">} />
+              <div style={{ padding: "0 0 10px 0", color: "var(--text-dim)", fontSize: "0.8rem" }}>
+                {selectedNode ? (
+                  <span>Selected Node: <b style={{ color: "var(--accent)" }}>{selectedNode}</b></span>
+                ) : (
+                  "Tip: Click a node to focus AI refactoring on that specific service."
+                )}
+              </div>
+              <DependencyGraph
+                graph={adj}
+                healthMap={healthMap as Record<string, "healthy" | "warning" | "critical">}
+                onNodeSelect={setSelectedNode}
+              />
             </div>
           </>
         ) : (

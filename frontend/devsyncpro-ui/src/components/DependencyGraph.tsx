@@ -4,6 +4,7 @@ import * as d3 from "d3";
 interface DependencyGraphProps {
   graph: Record<string, string[]>;
   healthMap?: Record<string, "healthy" | "warning" | "critical">;
+  onNodeSelect?: (nodeId: string) => void;
 }
 
 function computeTransitiveBlastRadius(graph: Record<string, string[]>) {
@@ -28,6 +29,7 @@ function computeTransitiveBlastRadius(graph: Record<string, string[]>) {
 export const DependencyGraph: React.FC<DependencyGraphProps> = ({
   graph,
   healthMap = {},
+  onNodeSelect,
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -176,6 +178,13 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
       .on("mouseout", function (event: any, d: any) {
         d3.select(this).transition().duration(200).attr("r", minR + (maxR - minR) * ((actualBlastRadius[d.id] ?? 1) / Math.max(1, maxBlast)));
         tooltip.style("display", "none");
+      })
+      .on("click", (event: any, d: any) => {
+        if (onNodeSelect) onNodeSelect(d.id);
+
+        // Visual feedback for selection
+        d3.selectAll(".node-circle").attr("stroke", "none").attr("stroke-width", 0);
+        d3.select(event.currentTarget).attr("stroke", "var(--accent)").attr("stroke-width", 3);
       });
 
     node.append("text")
