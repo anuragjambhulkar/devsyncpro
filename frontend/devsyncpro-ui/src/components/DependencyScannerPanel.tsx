@@ -34,6 +34,7 @@ export const DependencyScannerPanel: React.FC = () => {
   const [repoPath, setRepoPath] = useState("https://github.com/golang/example.git");
   const [lastRaw, setLastRaw] = useState<any>(null);
   const [reportId, setReportId] = useState<string | null>(null);
+  const [nodeMeta, setNodeMeta] = useState<Record<string, any>>({});
   const [shareLink, setShareLink] = useState<string | null>(null);
 
   // AI Refactor State
@@ -72,6 +73,7 @@ export const DependencyScannerPanel: React.FC = () => {
       const converted = convertBackendGraph(data.graph);
       const { nodes, edges } = adjacencyToNodesEdges(converted);
       setDependencyGraph({ nodes, edges });
+      setNodeMeta(data.meta || {});
       setLastRaw(data);
     } catch (e: any) {
       setError("Failed to load report: " + e.message);
@@ -144,6 +146,7 @@ export const DependencyScannerPanel: React.FC = () => {
       if (Object.keys(directConverted).length > 0) {
         const { nodes, edges } = adjacencyToNodesEdges(directConverted);
         setDependencyGraph({ nodes, edges });
+        setNodeMeta(raw.meta || {});
         setLastRaw(raw);
         if (raw.report_id) {
           setShareLink(`${window.location.origin}${window.location.pathname}?report_id=${raw.report_id}`);

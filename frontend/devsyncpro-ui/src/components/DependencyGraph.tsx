@@ -5,6 +5,7 @@ interface DependencyGraphProps {
   graph: Record<string, string[]>;
   healthMap?: Record<string, "healthy" | "warning" | "critical">;
   onNodeSelect?: (nodeId: string) => void;
+  nodeMeta?: Record<string, any>;
 }
 
 function computeTransitiveBlastRadius(graph: Record<string, string[]>) {
@@ -30,6 +31,7 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
   graph,
   healthMap = {},
   onNodeSelect,
+  nodeMeta = {},
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
@@ -159,10 +161,12 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
       .on("mouseover", function (event: any, d: any) {
         d3.select(this).transition().duration(200).attr("r", (minR + (maxR - minR) * ((actualBlastRadius[d.id] ?? 1) / Math.max(1, maxBlast))) + 6);
         const status = healthMap[d.id] || "healthy";
+        const meta = nodeMeta[d.id] || {};
         tooltip
           .html(
             `<b style="font-size:1.1rem; color:var(--primary)">${d.id}</b><br/>
              Status: <b style="color:${status === 'critical' ? 'var(--error)' : status === 'warning' ? 'var(--warning)' : 'var(--success)'}">${status.toUpperCase()}</b><br/>
+             Tech Stack: <b style="color:#fcd34d">${meta.language ? meta.language.toUpperCase() : 'UNKNOWN'}</b><br/>
              Transitive Blast: <b style="color:var(--accent)">${actualBlastRadius[d.id] ?? 0} services</b><br/>
              <div style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.1); padding-top:4px; font-size:0.75rem; color:var(--text-dim)">
                Direct: ${(graph[d.id] && graph[d.id].length) ? graph[d.id].join(", ") : "isolated"}
