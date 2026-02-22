@@ -35,9 +35,9 @@ export const DependencyGraph: React.FC<DependencyGraphProps> = ({
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  const actualBlastRadius = computeTransitiveBlastRadius(graph || {});
-  const allBlasts = Object.values(actualBlastRadius);
-  const maxBlast = allBlasts.length ? Math.max(...allBlasts, 1) : 1;
+  const actualBlastRadius = React.useMemo(() => computeTransitiveBlastRadius(graph || {}), [graph]);
+  const allBlasts = React.useMemo(() => Object.values(actualBlastRadius), [actualBlastRadius]);
+  const maxBlast = React.useMemo(() => (allBlasts.length ? Math.max(...allBlasts, 1) : 1), [allBlasts]);
 
   const simulationRef = useRef<any>(null);
 

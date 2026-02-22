@@ -192,7 +192,7 @@ export const DependencyScannerPanel: React.FC = () => {
     return { nodes, edges };
   }
 
-  const adj = asAdjacencyList(dependencyGraph.nodes, dependencyGraph.edges);
+  const adj = React.useMemo(() => asAdjacencyList(dependencyGraph.nodes, dependencyGraph.edges), [dependencyGraph]);
 
   const healthMap = React.useMemo(() => {
     const map: Record<string, string> = {};
