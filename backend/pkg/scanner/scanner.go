@@ -13,6 +13,20 @@ import (
 	"strings"
 )
 
+// --- XML Types for .NET ---
+type csprojDependencies struct {
+	XMLName    xml.Name `xml:"Project"`
+	ItemGroups []struct {
+		PackageRefs []struct {
+			Include string `xml:"Include,attr"`
+			Version string `xml:"Version,attr"`
+		} `xml:"PackageReference"`
+		ProjectRefs []struct {
+			Include string `xml:"Include,attr"`
+		} `xml:"ProjectReference"`
+	} `xml:"ItemGroup"`
+}
+
 // --- Graph types used by scanner ---
 type EdgeV struct {
 	From string `json:"from"`
@@ -254,7 +268,7 @@ func UniqueStrings(arr []string) []string {
 // --- detect service directories and build graph ---
 func ScanRepoPathMulti(root string) (*GraphV, map[string]NodeMeta, error) {
 	nodeMeta := map[string]NodeMeta{} // nodeName -> meta
-	manifests := []string{"go.mod", "package.json", "requirements.txt", "pyproject.toml", "pom.xml", "build.gradle", "Dockerfile", "build.gradle.kts"}
+	manifests := []string{"go.mod", "package.json", "requirements.txt", "pyproject.toml", "pom.xml", "build.gradle", "Dockerfile", "build.gradle.kts", ".csproj", ".sln"}
 
 	_ = filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -320,6 +334,18 @@ func ScanRepoPathMulti(root string) (*GraphV, map[string]NodeMeta, error) {
 						meta.RawDeps = append(meta.RawDeps, reqs...)
 						// don't set language; docker can be present in any project
 					}
+				}
+			}
+			// Special check for .csproj since the filename is dynamic
+			if strings.HasSuffix(m, ".csproj") {
+				name, reqs, err := ParseCsprojDir(p)
+				if err == nil {
+					if name != "" {
+						meta.RawDeps = append(meta.RawDeps, name)
+					}
+					meta.RawDeps = append(meta.RawDeps, reqs...)
+					meta.Language = "dotnet"
+					found = true
 				}
 			}
 		}
