@@ -248,6 +248,54 @@ func ParseDockerfileDir(dir string) ([]string, error) {
 	return UniqueStrings(deps), nil
 }
 
+// parse .csproj -> PackageReference and ProjectReference
+func ParseCsprojDir(dir string) (string, []string, error) {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return "", nil, err
+	}
+	var csprojFile string
+	for _, f := range files {
+		if strings.HasSuffix(f.Name(), ".csproj") {
+			csprojFile = filepath.Join(dir, f.Name())
+			break
+		}
+	}
+	if csprojFile == "" {
+		return "", nil, fmt.Errorf("no .csproj found")
+	}
+
+	data, err := ioutil.ReadFile(csprojFile)
+	if err != nil {
+		return "", nil, err
+	}
+
+	var proj csprojDependencies
+	if err := xml.Unmarshal(data, &proj); err != nil {
+		return "", nil, err
+	}
+
+	projectName := strings.TrimSuffix(filepath.Base(csprojFile), ".csproj")
+	deps := []string{}
+	for _, group := range proj.ItemGroups {
+		for _, pr := range group.PackageRefs {
+			if pr.Include != "" {
+				deps = append(deps, pr.Include)
+			}
+		}
+		for _, pr := range group.ProjectRefs {
+			if pr.Include != "" {
+				// Project refs are often paths like "../OtherProj/OtherProj.csproj"
+				// Clean it up to just the project name
+				depName := strings.TrimSuffix(filepath.Base(pr.Include), ".csproj")
+				deps = append(deps, depName)
+			}
+		}
+	}
+
+	return projectName, UniqueStrings(deps), nil
+}
+
 // uniqueStrings utility
 func UniqueStrings(arr []string) []string {
 	seen := map[string]bool{}
