@@ -17,28 +17,21 @@ const getRenderUrl = (serviceName: string, defaultPort: number) => {
         const fullHost = window.location.hostname;
         // If we're on the UI, try to find the backend relative to the common prefix
         const base = "dsp-v5"; // Force consistent prefix matching
-
-        if (serviceName === "scanner") {
-            return `https://${base}-scanner.onrender.com`;
-        }
-        if (serviceName === "orchestrator") {
-            return `https://${base}-orchestrator.onrender.com`;
+        if (serviceName === "core") {
+            return `https://${base}-core.onrender.com`;
         }
         if (serviceName === "analyzer") {
             return `https://${base}-analyzer.onrender.com`;
-        }
-        if (serviceName === "relay") {
-            return `https://${base}-relay.onrender.com`;
         }
     }
     return `http://localhost:${defaultPort}`;
 };
 
 export const CONFIG = {
-    SCANNER_API: getRenderUrl("scanner", 10000),
-    ORCHESTRATOR_API: getRenderUrl("orchestrator", 10000),
+    SCANNER_API: getRenderUrl("core", 10000),
+    ORCHESTRATOR_API: getRenderUrl("core", 10000),
     ANALYZER_API: getRenderUrl("analyzer", 10000),
-    WS_URL: `${wsProtocol}//${getRenderUrl("relay", 10000).replace("https://", "").replace("http://", "")}/ws`
+    WS_URL: `${wsProtocol}//${getRenderUrl("core", 10000).replace("https://", "").replace("http://", "")}/ws`
 };
 
 if (isProd) {

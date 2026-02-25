@@ -2,63 +2,28 @@
 services:
   # Backend Services
   - type: web
-    name: dsp-v5-scanner
+    name: dsp-v5-core
     runtime: docker
     plan: free
     dockerContext: .
-    dockerfilePath: backend/repo-scanner/Dockerfile
+    dockerfilePath: backend/core-api/Dockerfile
     envVars:
       - key: PORT
         value: 10000
-      - key: SERVICE_TYPE
-        value: scanner
       - key: GOOGLE_CLOUD_PROJECT
         sync: false
       - key: PUBSUB_TOPIC_SCAN
         value: scan-events
-
-  - type: web
-    name: dsp-v5-orchestrator
-    runtime: docker
-    plan: free
-    dockerContext: .
-    dockerfilePath: backend/orchestrator/Dockerfile
-    envVars:
-      - key: PORT
-        value: 10000
-      - key: SERVICE_TYPE
-        value: orchestrator
-      - key: GOOGLE_CLOUD_PROJECT
-        sync: false
       - key: PUBSUB_TOPIC_OPERATIONS
         value: operation-events
-      - key: RELAY_URL
-        fromService:
-          name: dsp-v5-relay
-          type: web
-          property: host
-
-  - type: web
-    name: dsp-v5-analyzer
-    runtime: docker
-    plan: free
-    dockerContext: .
-    dockerfilePath: backend/ai-analyzer/Dockerfile
-    envVars:
-      - key: PORT
-        value: 10000
-      - key: GOOGLE_CLOUD_PROJECT
+      - key: DB_HOST
         sync: false
-
-  - type: web
-    name: dsp-v5-relay
-    runtime: docker
-    plan: free
-    dockerContext: .
-    dockerfilePath: websocket-server/Dockerfile
-    envVars:
-      - key: PORT
-        value: 10000
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: DB_NAME
+        sync: false
 
   # Frontend Static Site
   - type: web
